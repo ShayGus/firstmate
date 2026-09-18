@@ -439,9 +439,18 @@ FM_COMPOSER_LEFTBAR_FOOTER_RE_DEFAULT='^(Build|Plan)[[:space:]]+·[[:space:]]+'
 # ` - `, so its status row never carries a middle dot and a `pi ·` alternative
 # could only ever match typed text), when it opens with one of omp's spinner
 # frames then an elapsed cell, or when it carries the context-usage cell after
-# a middle dot. It is consulted only as the boundary BELOW a bare composer,
-# never on the composer row itself.
-FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/[0-9]+K'
+# a middle dot. 2026-09-18, live through Herdr on current omp builds: that
+# cell no longer ends in a K total - one worker renders `15.4%/1M`, another
+# `53K/?` - and an omp plugin draws a status row of its own below the omp
+# status row, ending `ponytail: ` plus a level word (`lite|full|ultra`,
+# row-final so ordinary prose mentioning the plugin never matches). The
+# K-era cell matched none of those, so idle panes read `pending`/`unknown`
+# and the steer, relaunch, and stop paths refused with "composer visibly
+# holds pending text". The plugin alternative shares this pattern because it
+# is the same boundary-below-the-composer furniture consulted by the same
+# callers; the rule never runs on the composer row itself, so typed
+# `ponytail: full` still reads pending.
+FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*([0-9]+(\.[0-9]+)?%/([0-9]+[KM]|\?)|[0-9]+K/\?)|ponytail:[[:space:]]+(lite|full|ultra)[[:space:]]*$'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
 # row, on the `›` row itself after the dim `Ask Codex to do anything`
