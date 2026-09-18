@@ -457,9 +457,7 @@ FM_COMPOSER_LEFTBAR_FOOTER_RE_DEFAULT='^(Build|Plan)[[:space:]]+·[[:space:]]+'
 # "composer visibly holds pending text". The plugin alternative shares this
 # pattern because it is the same boundary-below-the-composer furniture
 # consulted by the same callers; the rule never runs on the composer row
-# itself, so typed `ponytail: full` still reads pending. On the fleet's
-# `composer.shape: box` panes the status row is a boxed panel's top border;
-# that panel is taught to the scanner below.
+# itself, so typed `ponytail: full` still reads pending.
 FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|([0-9]+(\.[0-9]+)?%/([0-9]+[KM]|\?)|[0-9]+(\.[0-9]+)?%(─|╎)*┃(─|╎)*[0-9]+[KM]|[0-9]+K/\?)|ponytail:[[:space:]]+.*([Ff][Uu][Ll][Ll]|[Ll][Ii][Tt][Ee]|[Uu][Ll][Tt][Rr][Aa])[[:space:]]*$'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
@@ -719,7 +717,7 @@ _fm_composer_pi_separator_row() {  # <trimmed-row>
 _fm_composer_scan_screen() {  # <plain-screen> <cursor-or-empty> [extract-wrap]
   local pane=$1 cy=${2:-}
   local line indent left_stripped trimmed kind family side_family
-  local top_inner top_spaces='' geometry_check=0 geometry_ambiguous=0 top_raw=''
+  local top_inner top_spaces='' geometry_check=0 geometry_ambiguous=0
   local content_inner content_spaces bottom_inner bottom_spaces glyph
   local current_indent='' current_family='' row=0 top=-1 valid=0 content_rows=0
   # Complete-box results: the box containing the cursor (cursor mode) or the
@@ -727,9 +725,6 @@ _fm_composer_scan_screen() {  # <plain-screen> <cursor-or-empty> [extract-wrap]
   FM_COMPOSER_SCAN_BOX_TOP=-1
   FM_COMPOSER_SCAN_BOX_BOTTOM=-1
   FM_COMPOSER_SCAN_BOX_AMBIG=0
-  # Row index of an omp boxed-composer panel's input line (the panel's bottom
-  # border), -1 when the scan saw no such panel. See the panel close below.
-  FM_COMPOSER_SCAN_OMP_PANEL_INPUT=-1
   FM_COMPOSER_SCAN_INCOMPLETE_BOX_FROM=-1
   FM_COMPOSER_SCAN_UNSAFE=0
   FM_COMPOSER_SCAN_CURSOR_EDGE=0
@@ -821,7 +816,6 @@ _fm_composer_scan_screen() {  # <plain-screen> <cursor-or-empty> [extract-wrap]
       geometry_ambiguous=0
       geometry_check=1
       top_inner=$trimmed
-      top_raw=$trimmed
       case "$family" in
         rounded) top_inner=${top_inner#╭}; top_inner=${top_inner%╮}; top_spaces=${top_inner//─/ } ;;
         light) top_inner=${top_inner#┌}; top_inner=${top_inner%┐}; top_spaces=${top_inner//─/ } ;;
@@ -865,36 +859,6 @@ _fm_composer_scan_screen() {  # <plain-screen> <cursor-or-empty> [extract-wrap]
           FM_COMPOSER_SCAN_BOX_TOP=$top
           FM_COMPOSER_SCAN_BOX_BOTTOM=$row
           FM_COMPOSER_SCAN_BOX_AMBIG=$geometry_ambiguous
-        fi
-        FM_COMPOSER_SCAN_INCOMPLETE_BOX_FROM=-1
-      elif [ "$top" -ge 0 ] && [ "$family" = "$current_family" ] \
-           && [ "$valid" = 1 ] && [ "$content_rows" -eq 0 ] \
-           && [ "$family" = rounded ] \
-           && _fm_composer_row_is_omp_status "$top_raw"; then
-        # omp (Oh My Pi) boxed-composer panel, verified live through Herdr on
-        # the fleet's omp panes (2026-09-18, composer.shape: box + custom
-        # powerline statusLine): the panel has NO interior rows. Its top
-        # border is the omp status row - proven furniture by the pattern
-        # above, not unprovable text, so the geometry ambiguity the generic
-        # close would record does not apply - and its bottom border IS the
-        # input line: an empty input renders as rule glyphs and spaces, held
-        # text renders inside that border. Closing it here keeps
-        # FM_COMPOSER_SCAN_INCOMPLETE_BOX_FROM from invalidating every
-        # candidate above it, which is what left an idle omp pane reading
-        # `unknown` and refused every steer. The verdict reads the input
-        # line through _fm_composer_classify_omp_panel_input.
-        if [ -n "$cy" ]; then
-          if [ "$top" -lt "$cy" ] && [ "$cy" -le "$row" ]; then
-            FM_COMPOSER_SCAN_BOX_TOP=$top
-            FM_COMPOSER_SCAN_BOX_BOTTOM=$row
-            FM_COMPOSER_SCAN_BOX_AMBIG=0
-            FM_COMPOSER_SCAN_OMP_PANEL_INPUT=$row
-          fi
-        else
-          FM_COMPOSER_SCAN_BOX_TOP=$top
-          FM_COMPOSER_SCAN_BOX_BOTTOM=$row
-          FM_COMPOSER_SCAN_BOX_AMBIG=0
-          FM_COMPOSER_SCAN_OMP_PANEL_INPUT=$row
         fi
         FM_COMPOSER_SCAN_INCOMPLETE_BOX_FROM=-1
       else
@@ -1125,36 +1089,6 @@ _fm_composer_row_is_omp_status() {  # <trimmed-row>
   fm_composer_idle_matches "$1" "${FM_COMPOSER_OMP_STATUS_RE:-$FM_COMPOSER_OMP_STATUS_RE_DEFAULT}" sensitive
 }
 
-# _fm_composer_classify_omp_panel_input: the verdict for omp's boxed-composer
-# panel (see the scan's panel close). The panel's bottom border row IS the
-# input line: everything between the leading `╰` corner and the trailing rule
-# fill + `╯` corner - which some builds omit entirely on an empty input - is
-# held composer text. An interior of only rule glyphs and spaces proves an
-# empty composer; surviving bytes are held text and read pending in BOTH
-# capture styles, because this shape has no dim idle-placeholder channel
-# (verified live: an empty input line carries nothing but `╰`, rule glyphs,
-# spaces, and the corners). The corner and fill strips are byte-exact so the
-# verdict never depends on the locale.
-_fm_composer_classify_omp_panel_input() {  # <screen> <styled> <row>
-  local screen=$1 styled=$2 row=$3 raw content
-  raw=$(_fm_composer_screen_row "$row" "$screen")
-  content=$(_fm_composer_row_content "$raw" "$styled")
-  content=${content#╰}
-  content=${content%╯}
-  while :; do
-    case "$content" in
-      [─[:space:]]*) content=${content#[─[:space:]]} ;;
-      *[─[:space:]]) content=${content%[─[:space:]]} ;;
-      *) break ;;
-    esac
-  done
-  if [ -n "$content" ]; then
-    printf 'pending'
-  else
-    printf 'empty'
-  fi
-}
-
 # _fm_composer_row_is_braille_furniture: 0 when the row is non-blank and its
 # non-whitespace content is entirely braille cells (fm_composer_strip_braille
 # above) - an animation row that never counts as typed content and bounds a
@@ -1290,16 +1224,12 @@ _fm_composer_select_cursorless() {
   FM_COMPOSER_SELECTED_FIRST=-1
   FM_COMPOSER_SELECTED_LAST=-1
   FM_COMPOSER_SELECTED_AMBIG=0
-  FM_COMPOSER_SELECTED_OMP_PANEL=0
   if [ "$FM_COMPOSER_SCAN_BOX_BOTTOM" -ge 0 ]; then
     generic=$FM_COMPOSER_SCAN_BOX_BOTTOM
     FM_COMPOSER_SELECTED_KIND=box
     FM_COMPOSER_SELECTED_FIRST=$((FM_COMPOSER_SCAN_BOX_TOP + 1))
     FM_COMPOSER_SELECTED_LAST=$((FM_COMPOSER_SCAN_BOX_BOTTOM - 1))
     FM_COMPOSER_SELECTED_AMBIG=$FM_COMPOSER_SCAN_BOX_AMBIG
-    if [ "$FM_COMPOSER_SCAN_OMP_PANEL_INPUT" -eq "$FM_COMPOSER_SCAN_BOX_BOTTOM" ]; then
-      FM_COMPOSER_SELECTED_OMP_PANEL=1
-    fi
   fi
   if [ "$FM_COMPOSER_SCAN_BARE_ROW" -gt "$generic" ]; then
     generic=$FM_COMPOSER_SCAN_BARE_ROW
@@ -1366,12 +1296,7 @@ _fm_composer_select_cursorless() {
     raw=$(_fm_composer_screen_row "$next" "$plain")
     trimmed=$raw
     fm_composer_normalize_trim_var trimmed
-    # An omp plugin draws its `ponytail: <level>` status row directly below
-    # the live composer container; like a structural edge it bounds the
-    # container instead of invalidating it (verified live on the fleet's omp
-    # panes, 2026-09-18).
-    if [ -n "$trimmed" ] && ! fm_composer_row_has_edge "$trimmed" \
-       && ! _fm_composer_row_is_omp_status "$trimmed"; then
+    if [ -n "$trimmed" ] && ! fm_composer_row_has_edge "$trimmed"; then
       FM_COMPOSER_SELECTED_KIND=
       return 1
     fi
@@ -1479,10 +1404,6 @@ EOF
       printf 'unknown'; return 0
     fi
     if [ "$FM_COMPOSER_SCAN_BOX_TOP" -ge 0 ]; then
-      if [ "$FM_COMPOSER_SCAN_OMP_PANEL_INPUT" -eq "$FM_COMPOSER_SCAN_BOX_BOTTOM" ]; then
-        _fm_composer_classify_omp_panel_input "$screen" "$styled" "$FM_COMPOSER_SCAN_OMP_PANEL_INPUT"
-        return 0
-      fi
       _fm_composer_classify_rows "$screen" "$styled" "$FM_COMPOSER_SCAN_BOX_AMBIG" \
         "$((FM_COMPOSER_SCAN_BOX_TOP + 1))" "$((FM_COMPOSER_SCAN_BOX_BOTTOM - 1))"
       return 0
@@ -1543,12 +1464,8 @@ EOF
       _fm_composer_pi_verdict "$screen" "$styled" "$has_identity" "$identity"
       ;;
     box)
-      if [ "$FM_COMPOSER_SELECTED_OMP_PANEL" = 1 ]; then
-        _fm_composer_classify_omp_panel_input "$screen" "$styled" "$FM_COMPOSER_SCAN_OMP_PANEL_INPUT"
-      else
-        _fm_composer_classify_rows "$screen" "$styled" "$FM_COMPOSER_SELECTED_AMBIG" \
-          "$FM_COMPOSER_SELECTED_FIRST" "$FM_COMPOSER_SELECTED_LAST"
-      fi
+      _fm_composer_classify_rows "$screen" "$styled" "$FM_COMPOSER_SELECTED_AMBIG" \
+        "$FM_COMPOSER_SELECTED_FIRST" "$FM_COMPOSER_SELECTED_LAST"
       ;;
     bare)
       if [ "$FM_COMPOSER_SELECTED_LAST" -gt "$FM_COMPOSER_SELECTED_FIRST" ]; then
