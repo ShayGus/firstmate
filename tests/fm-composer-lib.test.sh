@@ -344,52 +344,32 @@ test_matrix_omp_status_row_bounds_bare_composer() {
   assert_screen "idle omp on a plain capture" empty "$CAPS_PLAIN" "$idle_unicode"
   # 2026-09-18, live through Herdr on current omp builds: the context cell no
   # longer ends in a K total. One worker renders `15.4%/1M`, another `53K/?`,
-  # and an omp plugin draws a status row of its own below the omp status row,
-  # ending `ponytail: ` plus a level word. None matched the rule, all joined
+  # a third `40K/?` behind ` > ` separators. None matched the rule, all joined
   # the wrap region as typed text, and the idle panes read `pending`/`unknown`
   # - which refused every steer and relaunch with "composer visibly holds
   # pending text". The rows below reach the classifier without the identity or
-  # spinner openings, so the context cell (and the plugin tail) is the only
-  # furniture signal.
+  # spinner openings, so the context cell is the only furniture signal.
   idle_pct_m=$'transcript line\n\n❯\n detached · ◫ 15.4%/1M ⟲ · (sub)'
   idle_k_q=$'transcript line\n\n❯\n detached · ◫ 53K/? ⟲ · (sub)'
-  with_plugin=$'transcript line\n\n❯\n detached · ◫ 15.4%/1M ⟲ · (sub)\n ponytail: full'
   _fm_composer_row_is_omp_status ' detached · ◫ 15.4%/1M ⟲ · (sub)' \
     || fail "the %/1M context cell must be recognized as omp furniture"
   _fm_composer_row_is_omp_status ' detached · ◫ 53K/? ⟲ · (sub)' \
     || fail "the 53K/? context cell must be recognized as omp furniture"
-  _fm_composer_row_is_omp_status ' ponytail: full' \
-    || fail "the omp plugin status row (ponytail: <level>) must be recognized as furniture"
-  # The fleet's `composer.shape: box` panes render the status row as a boxed
-  # panel's top border with the 18.1.x powerline usage bar, and the plugin
-  # row renders with an emoji and an uppercase level; bytes captured live.
-  _fm_composer_row_is_omp_status '╭── ⬢ Opus 5 · ◒ high ▶ ⑂ master ▶──44%┃1M─◀ Fix /effort errors and flickering ◀ ⏱ 5h 22% (1h 59m) · 7d 42% (14h) ◀ 💾 97.27% ◀ ⤵ 11M ◀ ⤴ 733K ◀ 💾 478M ──╮' \
-    || fail "the boxed panel's powerline status border must be omp furniture"
   _fm_composer_row_is_omp_status ' π > ⬢ no-model > 🌳 firstmate/firstmate > ⑂ fm/task > ◫ 40K/? ⟲ ▶────────' \
     || fail "the 40K/? context cell must be recognized as omp furniture"
-  _fm_composer_row_is_omp_status '╭── ⬢ Opus 5 · ◒ high ▶ ⑂ main ▶─────36%───┃─1M─◀ task ◀ ──╮' \
-    || fail "the fill-before-marker bar cell must be recognized as omp furniture"
-  _fm_composer_row_is_omp_status '╭── ⬢ Opus 5 · ◒ high ▶ ⑂ main ▶──73%╎┃───1M─◀ task ◀ ──╮' \
-    || fail "the marker-adjacent bar cell must be recognized as omp furniture"
-  _fm_composer_row_is_omp_status '○ 🐴 ponytail: ⚡ FULL' \
-    || fail "the real plugin row (uppercase level, emoji) must be omp furniture"
   _fm_composer_row_is_omp_status '╭─── • Read bin/fm-composer-lib.sh:444:raw ───╮' \
     && fail "a transcript tool card must not be omp furniture"
   _fm_composer_row_is_omp_status '╰─                                                              ─╯' \
     && fail "a bare bottom-cap row must not be omp furniture on its own"
   _fm_composer_row_is_omp_status '15.4 percent of 1M tokens used' \
     && fail "prose mentioning the new indicator shapes must not be omp furniture"
-  _fm_composer_row_is_omp_status 'ponytail: full power for this task' \
-    && fail "prose that merely opens with 'ponytail:' must not be omp furniture"
   assert_screen "idle omp, %/1M context cell" empty "$CAPS_STYLED" "$idle_pct_m"
   assert_screen "idle omp, %/1M context cell on plain capture" empty "$CAPS_PLAIN" "$idle_pct_m"
   assert_screen "idle omp, 53K/? context cell" empty "$CAPS_STYLED" "$idle_k_q"
   assert_screen "idle omp, 53K/? context cell on plain capture" empty "$CAPS_PLAIN" "$idle_k_q"
-  assert_screen "idle omp with plugin row below the status row" empty "$CAPS_STYLED" "$with_plugin"
-  assert_screen "idle omp with plugin row on plain capture" empty "$CAPS_PLAIN" "$with_plugin"
-  # The guard direction: a composer genuinely holding `ponytail: full` as
-  # typed text stays pending - the pattern is consulted only below the glyph
-  # row, never on the composer row itself.
+  # The guard direction: a composer genuinely holding text stays pending -
+  # the pattern is consulted only below the glyph row, never on the composer
+  # row itself.
   assert_screen "typed 'ponytail: full' stays pending" pending "$CAPS_STYLED" \
     $'transcript line\n\n❯ ponytail: full'
   assert_screen "typed prose above the %/1M status row stays pending" pending "$CAPS_STYLED" \

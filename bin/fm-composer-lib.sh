@@ -441,24 +441,17 @@ FM_COMPOSER_LEFTBAR_FOOTER_RE_DEFAULT='^(Build|Plan)[[:space:]]+·[[:space:]]+'
 # frames then an elapsed cell, or when it carries the context-usage cell.
 # 2026-09-18, live through Herdr on the fleet's omp panes: the context cell is
 # matched by its own bytes alone, with no separator requirement, because the
-# observed rows separate their cells with ` · `, ` > `, or powerline fills and
-# no single separator is common to them. The observed cell shapes are
-# `15.4%/272K` and `11.7%/1M` (slash), the 18.1.x powerline usage bar, which
-# renders the used total after `%` as runs of U+2500/U+254E fill around the
-# U+2503 usage marker whose position moves with usage (`44%┃1M`,
-# `36%───┃─1M`, `73%╎┃───1M`), and the unknown-token-total shapes `53K/?` and
-# `40K/?`. The plugin alternative matches an omp plugin's status row
-# drawn below the composer, captured live as `○ 🐴 ponytail: ⚡ FULL` - the
-# literal `ponytail:`, anything, then a level word in either case, row-final
-# so ordinary prose mentioning the plugin never matches; the level classes
-# keep the case-sensitive matcher working on the uppercase render. The
-# K-era cell matched none of the new shapes, so idle panes read
-# `pending`/`unknown` and the steer, relaunch, and stop paths refused with
-# "composer visibly holds pending text". The plugin alternative shares this
-# pattern because it is the same boundary-below-the-composer furniture
-# consulted by the same callers; the rule never runs on the composer row
-# itself, so typed `ponytail: full` still reads pending.
-FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|([0-9]+(\.[0-9]+)?%/([0-9]+[KM]|\?)|[0-9]+(\.[0-9]+)?%(─|╎)*┃(─|╎)*[0-9]+[KM]|[0-9]+K/\?)|ponytail:[[:space:]]+.*([Ff][Uu][Ll][Ll]|[Ll][Ii][Tt][Ee]|[Uu][Ll][Tt][Rr][Aa])[[:space:]]*$'
+# observed rows separate their cells with ` · ` or ` > ` and no single
+# separator is common to them. The observed cell shapes are `15.4%/272K` and
+# `11.7%/1M` (a K or M total after the slash) and the unknown-token-total
+# shapes `53K/?` and `40K/?`. The K-era cell matched none of the new shapes,
+# so idle panes read `pending`/`unknown` and the steer, relaunch, and stop
+# paths refused with "composer visibly holds pending text".
+# Known limitation: omp's `composer.shape: box` panel (status row as a boxed
+# top border, input on the bottom border) is out of scope and reads `unknown`;
+# firstmate pins every omp worker to the borderless shape, and `unknown`
+# refuses rather than types.
+FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[0-9]+(\.[0-9]+)?%/([0-9]+[KM]|\?)|[0-9]+K/\?'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
 # row, on the `›` row itself after the dim `Ask Codex to do anything`
