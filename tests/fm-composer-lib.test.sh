@@ -289,6 +289,59 @@ test_matrix_herdr_halfblock_rule_bounds_bare_wrap() {
   pass "matrix: herdr half-block rules bound a bare composer's wrap region"
 }
 
+test_matrix_omp_boxed_panel_reads_input_line() {
+  # 2026-09-18, live through Herdr on the fleet's omp panes (composer.shape:
+  # box + custom powerline statusLine): omp draws NO bare `❯` row at all. The
+  # composer is a two-row panel whose top border is the omp status row and
+  # whose bottom border IS the input line - an empty input renders as rule
+  # glyphs and spaces (`╰─ ... ─╯`), held text renders inside that border, and
+  # an omp plugin draws `○ 🐴 ponytail: ⚡ FULL` below the panel. The old
+  # box rules rejected the panel as an incomplete box (a bottom border with
+  # zero interior rows), so an idle omp pane read `unknown` and every steer,
+  # relaunch, and stop was refused with "composer visibly holds pending text".
+  # Bytes below are captured panes, not inventions.
+  local top_row panel_empty panel_typed decorative
+  top_row='╭── ⬢ Opus 5 · ◒ high ▶ ⑂ master ▶──44%┃1M─◀ Fix /effort errors and flickering ◀ ⏱ 5h 22% (1h 59m) · 7d 42% (14h) ◀ 💾 97.27% ◀ ⤵ 11M ◀ ⤴ 733K ◀ 💾 478M ──╮'
+  panel_empty=$'transcript line\n\n'"$top_row"$'\n╰─                                                                    ─╯\n○ 🐴 ponytail: ⚡ FULL'
+  panel_typed=$'transcript line\n\n'"$top_row"$'\n╰─ hello, please fix the flaky test ──────────────────╯\n○ 🐴 ponytail: ⚡ FULL'
+  # Non-vacuousness: the top border really is omp status furniture, the empty
+  # input line really is a structural edge the old rules closed as incomplete,
+  # and the plugin row really is non-blank content the container boundary
+  # would otherwise reject.
+  _fm_composer_row_is_omp_status "$top_row" \
+    || fail "the boxed panel's powerline status border must be omp furniture"
+  _fm_composer_row_is_omp_status ' π > ⬢ no-model > 🌳 firstmate/firstmate > ⑂ fm/task > ◫ 40K/? ⟲ ▶────────' \
+    || fail "the 40K/? context cell must be recognized as omp furniture"
+  _fm_composer_row_is_omp_status '╭── ⬢ Opus 5 · ◒ high ▶ ⑂ main ▶─────36%───┃─1M─◀ task ◀ ──╮' \
+    || fail "the fill-before-marker bar cell must be recognized as omp furniture"
+  _fm_composer_row_is_omp_status '╭── ⬢ Opus 5 · ◒ high ▶ ⑂ main ▶──73%╎┃───1M─◀ task ◀ ──╮' \
+    || fail "the marker-adjacent bar cell must be recognized as omp furniture"
+  _fm_composer_row_is_omp_status '○ 🐴 ponytail: ⚡ FULL' \
+    || fail "the real plugin row (uppercase level, emoji) must be omp furniture"
+  _fm_composer_row_is_omp_status '╭─── • Read bin/fm-composer-lib.sh:444:raw ───╮' \
+    && fail "a transcript tool card must not be omp furniture"
+  _fm_composer_row_is_omp_status '╰─                                                              ─╯' \
+    && fail "a bare bottom-cap row must not be omp furniture on its own"
+  fm_composer_row_has_edge '╰─                                                              ─╯' \
+    || fail "fixture drift: the empty input line must stay a structural edge"
+  # The verdicts: an empty panel is an empty composer, a panel holding text
+  # is pending - in both capture styles. The plugin row below must not
+  # invalidate the container.
+  assert_screen "idle omp boxed panel reads empty" empty "$CAPS_STYLED" "$panel_empty"
+  assert_screen "idle omp boxed panel reads empty on plain capture" empty "$CAPS_PLAIN" "$panel_empty"
+  assert_screen "typed omp boxed panel reads pending" pending "$CAPS_STYLED" "$panel_typed"
+  assert_screen "typed omp boxed panel reads pending on plain capture" pending "$CAPS_PLAIN" "$panel_typed"
+  # Cursor mode (tmux): the cursor parks ON the input-line border.
+  assert_screen "cursor on empty omp panel input line" empty "$CAPS_TMUX" "$panel_empty" 3
+  assert_screen "cursor on typed omp panel input line" pending "$CAPS_TMUX" "$panel_typed" 3
+  # The guard against a false empty: a decorative two-row box with no omp
+  # status border is not a composer and must stay unknown.
+  decorative=$'transcript line\n\n╭─── job summary ───╮\n╰──────────────────╯'
+  assert_screen "decorative two-row box stays unknown" unknown "$CAPS_STYLED" "$decorative"
+  assert_screen "decorative two-row box stays unknown under LC_ALL=C" unknown "$CAPS_STYLED" "$decorative"
+  pass "matrix: omp's boxed composer panel reads its input line, not its status border"
+}
+
 test_matrix_omp_status_row_bounds_bare_composer() {
   # omp (Oh My Pi) draws its status line directly BELOW the borderless `❯`
   # composer. Captured live through Herdr on omp 18.1.11 under the captain's
@@ -822,6 +875,7 @@ test_matrix_codex_dim_hint_row
 test_matrix_muse_truecolor_glyph_survives_signal_loss
 test_matrix_cursor_reverse_video_placeholder_remnant
 test_matrix_herdr_halfblock_rule_bounds_bare_wrap
+test_matrix_omp_boxed_panel_reads_input_line
 test_matrix_omp_status_row_bounds_bare_composer
 test_matrix_codex_idle_starfield_furniture
 test_matrix_pi_separated_needs_identity
