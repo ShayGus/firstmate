@@ -924,7 +924,47 @@ test_worker_role_scope() {
   pass "fm-brief: scaffolds leave the worker role scope to the launch boundary and keep the secondmate contract"
 }
 
+test_omp_worker_agent_contract() {
+  # shellcheck source=bin/fm-dod-lib.sh
+  . "$ROOT/bin/fm-dod-lib.sh"
+  local got
+  got=$(fm_omp_ship_worker_agent 08:59)
+  [ "$got" = off-peak-hours-worker ] || fail "08:59 Israel must select off-peak-hours-worker, got '$got'"
+  got=$(fm_omp_ship_worker_agent 09:00)
+  [ "$got" = peak-hours-worker ] || fail "09:00 Israel must select peak-hours-worker, got '$got'"
+  got=$(fm_omp_ship_worker_agent 12:59)
+  [ "$got" = peak-hours-worker ] || fail "12:59 Israel must select peak-hours-worker, got '$got'"
+  got=$(fm_omp_ship_worker_agent 13:00)
+  [ "$got" = off-peak-hours-worker ] || fail "13:00 Israel must select off-peak-hours-worker, got '$got'"
+  got=$(fm_omp_ship_worker_agent 00:07)
+  [ "$got" = off-peak-hours-worker ] || fail "00:07 Israel must select off-peak-hours-worker, got '$got'"
+  got=$(fm_omp_ship_worker_agent 08:99)
+  [ "$got" = off-peak-hours-worker ] || fail "minutes must not widen the hour window, got '$got'"
+  if got=$(fm_omp_ship_worker_agent "nonsense" 2>&1); then
+    fail "an invalid injected time must fail, got '$got'"
+  fi
+  pass "fm-dod-lib: the Israel-clock split selects the named implementation agent at every boundary"
+
+  local dir
+  dir="$TMP_ROOT/omp-role"
+  mkdir -p "$dir/state"
+  fm_brief_worker_role "$dir/state" omp-t1 > "$dir/plain.md"
+  assert_grep '# Current worker role contract' "$dir/plain.md" "the plain role contract lost its heading"
+  assert_no_grep 'coordinator' "$dir/plain.md" "a launch with no selected agent must not read as a coordinator"
+  assert_no_grep 'peak-hours-worker' "$dir/plain.md" "a launch with no selected agent must not name an agent"
+
+  fm_brief_worker_role "$dir/state" omp-t2 peak-hours-worker > "$dir/coordinator.md"
+  assert_grep 'durable coordinator' "$dir/coordinator.md" "the omp ship contract must say coordinator"
+  assert_grep 'must not write or repair source code' "$dir/coordinator.md" "the coordinator contract must forbid direct implementation"
+  assert_grep 'peak-hours-worker' "$dir/coordinator.md" "the coordinator contract must name the selected agent"
+  assert_grep 'Never delegate through a bash subprocess' "$dir/coordinator.md" "the coordinator contract must forbid bash emulation of the child"
+  assert_grep 'no isolated worktree' "$dir/coordinator.md" "the coordinator contract must keep the child in the existing worktree"
+  assert_grep 'exactly one task item' "$dir/coordinator.md" "the coordinator contract must demand one task item per call"
+  pass "fm-brief: the omp ship role contract renders the coordinator scope and the selected agent"
+}
+
 test_worker_role_scope
+test_omp_worker_agent_contract
 test_script_parses
 test_no_heredoc_in_command_substitution
 test_help_includes_entire_header

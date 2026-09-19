@@ -165,6 +165,17 @@
 #   all and relies on omp auto-discovering the home's tracked .omp/extensions/
 #   (verified, omp 18.1.11: a file named both ways loads twice, and discovery is
 #   cwd-only with no trust dialog).
+#   An omp SHIP spawn is a durable coordinator (docs/subagent-guard.md "The
+#   deliberate omp ship coordinator"): it carries FM_ALLOW_SUBAGENT=1, the
+#   guard's launch-time escape, and its extension gates omp's task tool to
+#   exactly one non-isolated item for one metadata-selected implementation
+#   agent, so the coordinator verifies, commits, and reports but never writes
+#   implementation itself. fm_omp_ship_worker_agent (bin/fm-dod-lib.sh) resolves
+#   peak-hours-worker from 09:00 inclusive to 13:00 exclusive in
+#   Asia/Jerusalem and off-peak-hours-worker otherwise, once at intake; the
+#   record stores the name in omp_worker_agent= and a relaunch reuses it even
+#   when the clock is now in the other window. Scouts, secondmates, non-omp
+#   workers, and primaries never carry the escape or the gate.
 #   config/secondmate-harness may also carry an optional model and effort as extra
 #   whitespace-separated tokens ("<harness> [<model>] [<effort>]"). For a
 #   --secondmate spawn, those tokens apply only when this spawn also resolves its
@@ -1743,9 +1754,15 @@ launch_template() {
   # pinned to the worktree because omp's extension discovery is cwd-only. A
   # secondmate loads its two primary extensions by that discovery alone:
   # naming them with -e as well loads each twice (verified), doubling every
-  # session_stop continuation.
+  # session_stop continuation. A SHIP launch also sets FM_ALLOW_SUBAGENT=1,
+  # the deliberate escape hatch of the primary-home subagent guard
+  # (docs/subagent-guard.md): this omp worker is the coordinator that hands
+  # implementation to one named child through omp's task tool, while scouts,
+  # secondmates, non-omp workers, and primaries never carry it.
   omp)
-    printf '%s' 'env -u CLAUDECODE -u PI_CODING_AGENT -u GROK_AGENT -u FM_PI_HARNESS -u GEMINI_CLI -u CURSOR_AGENT -u CURSOR_INVOKED_AS FM_OMP_HARNESS=omp OMP_SKIP_SETUP=1 __OMPBIN__ --config __OMPWORKERCFG__ --auto-approve --cwd __WORKTREE__'
+    printf '%s' 'env -u CLAUDECODE -u PI_CODING_AGENT -u GROK_AGENT -u FM_PI_HARNESS -u GEMINI_CLI -u CURSOR_AGENT -u CURSOR_INVOKED_AS '
+    if [ "$kind" = ship ]; then printf '%s' 'FM_ALLOW_SUBAGENT=1 '; fi
+    printf '%s' 'FM_OMP_HARNESS=omp OMP_SKIP_SETUP=1 __OMPBIN__ --config __OMPWORKERCFG__ --auto-approve --cwd __WORKTREE__'
     if [ "$kind" = secondmate ]; then
       printf '%s' ' __MODELFLAG____EFFORTFLAG__"$(__OPINPUT__ encode launch-brief < __BRIEF__)"'
     else
@@ -2007,6 +2024,29 @@ omp)
     echo "error: omp worker posture overlay missing at $OMP_WORKER_CFG; a worker launched without it can park on the captain's own approval or plan-mode settings" >&2
     exit 1
   }
+  OMP_WORKER_AGENT=
+  if [ "$KIND" = ship ]; then
+    # The implementation child is named once, at intake: a fresh spawn resolves
+    # fm_omp_ship_worker_agent's Israel-clock split and the record stores the
+    # exact name, so a relaunch reuses it even when the clock has crossed into
+    # the other window. A legacy record predating the key backfills it once,
+    # and a corrupted value refuses rather than gating a child that can never
+    # be named. FM_SPAWN_OMP_CLOCK is the tests' deterministic injection point
+    # and is never set in production.
+    if [ "$RELAUNCH" -eq 1 ]; then
+      OMP_WORKER_AGENT=$(fm_meta_get "$RELAUNCH_META" omp_worker_agent)
+    fi
+    if [ -z "$OMP_WORKER_AGENT" ]; then
+      OMP_WORKER_AGENT=$(fm_omp_ship_worker_agent "${FM_SPAWN_OMP_CLOCK:-}") || exit 1
+    fi
+    case "$OMP_WORKER_AGENT" in
+    peak-hours-worker | off-peak-hours-worker) ;;
+    *)
+      echo "error: task $ID's record names omp_worker_agent='$OMP_WORKER_AGENT'; only peak-hours-worker and off-peak-hours-worker are valid" >&2
+      exit 1
+      ;;
+    esac
+  fi
   ;;
 agy)
   AGY_BIN=$(resolve_pi_executable agy) || {
@@ -2587,7 +2627,7 @@ if [ "$KIND" = ship ] || [ "$KIND" = scout ]; then
   BRIEF="$DATA/$ID/launch-brief.md"
   BRIEF_TMP="$DATA/$ID/.launch-brief.md.${BASHPID:-$$}"
   {
-    fm_brief_worker_role "$STATE" "$ID" &&
+    fm_brief_worker_role "$STATE" "$ID" "${OMP_WORKER_AGENT:-}" &&
       printf '\n' &&
       cat "$SOURCE_BRIEF" &&
       if [ "$KIND" = ship ] && [ "$MODE" = no-mistakes ]; then
@@ -3970,6 +4010,49 @@ EOF
     # has no trust gate, yet its cwd-only extension auto-discovery would load a
     # worktree-resident copy a SECOND time next to the explicit -e (verified,
     # omp 18.1.11). Lives in state/, cleaned by teardown.
+    # An OMP SHIP task is a coordinator, so the extension also gates omp's task
+    # tool (docs/subagent-guard.md "The deliberate omp ship coordinator"): a
+    # task call must be exactly one non-isolated item naming the one
+    # metadata-selected implementation agent, so the coordinator can inspect,
+    # verify, commit, and report but never write implementation itself, and
+    # every edit goes to the agent whose model list and fallback policy the
+    # captain chose. Scouts carry no gate: this is a ship-only contract.
+    OMP_AGENT_CONST=
+    OMP_TASK_GATE=
+    if [ "$KIND" = ship ]; then
+      OMP_AGENT_CONST="const FM_WORKER_AGENT = \"$OMP_WORKER_AGENT\";"
+      OMP_TASK_GATE=$(cat <<GATE
+  pi.on("tool_call", async (event: any) => {
+    if (!event || event.type !== "tool_call" || event.toolName !== "task") return {};
+    const refuse = (why: string): Record<string, unknown> => ({
+      block: true,
+      reason:
+        why +
+        " Exactly one named child, " + FM_WORKER_AGENT + ", owns implementation in this task's existing Firstmate worktree: pass exactly one task item naming that agent, with no isolated worktree, carrying the complete instructions, owned files, repository facts, acceptance criteria, and allowed and forbidden commands.",
+    });
+    const input = (event.input || {}) as { tasks?: unknown };
+    const items = Array.isArray(input.tasks) ? input.tasks : [];
+    if (items.length !== 1) {
+      return refuse("A task call must carry exactly one task item (got " + items.length + ").");
+    }
+    const item = items[0] as { agent?: unknown; isolated?: unknown };
+    if (item === null || typeof item !== "object") {
+      return refuse("A task item must be an object naming its agent.");
+    }
+    if (typeof item.agent !== "string" || item.agent === "") {
+      return refuse("A task item names no agent; the metadata-selected implementation agent is " + FM_WORKER_AGENT + ".");
+    }
+    if (item.agent !== FM_WORKER_AGENT) {
+      return refuse("A task item named agent '" + String(item.agent) + "' instead of the metadata-selected " + FM_WORKER_AGENT + ".");
+    }
+    if (item.isolated === true) {
+      return refuse("A task item requested an isolated child; the implementation child must write this task's existing worktree.");
+    }
+    return {};
+  });
+GATE
+      )
+    fi
     cat >"$STATE/$ID.omp-ext.ts" <<EOF
 // Firstmate semantic busy-state events + turn-end notification for omp (Oh My
 // Pi); written by fm-spawn under the contract owned by bin/fm-busy-lib.sh.
@@ -3985,6 +4068,7 @@ EOF
 // inner turn boundary and stays a wake NOTIFICATION touch for the watcher,
 // never current-state truth.
 import { execFile } from "node:child_process";
+${OMP_AGENT_CONST}
 const busyEvent = (state: string, event: string) =>
   new Promise<void>((resolve) => {
     execFile("$FM_ROOT/bin/fm-busy-event.sh", [
@@ -3999,6 +4083,7 @@ export default function (pi: any) {
     return busyEvent("idle", "agent-end");
   });
   pi.on("turn_end", () => execFile("touch", ["$TURNEND"]));
+${OMP_TASK_GATE}
 }
 EOF
     ;;
@@ -4193,7 +4278,7 @@ SPAWN_META_PATH=$SPAWN_META_TMP
 preserve_relaunch_meta() {
   awk -F= '
     BEGIN {
-      split("window endpoint_task_id worktree project harness kind mode yolo tasktmp model effort busy_gen spawn_gen traceparent backend herdr_session herdr_workspace_id herdr_tab_id herdr_pane_id zellij_session zellij_tab_id zellij_pane_id orca_worktree_id terminal cmux_workspace_id cmux_surface_id home projects control_relaunch_tx", keys, " ")
+      split("window endpoint_task_id worktree project harness kind mode yolo tasktmp model effort omp_worker_agent busy_gen spawn_gen traceparent backend herdr_session herdr_workspace_id herdr_tab_id herdr_pane_id zellij_session zellij_tab_id zellij_pane_id orca_worktree_id terminal cmux_workspace_id cmux_surface_id home projects control_relaunch_tx", keys, " ")
       for (i in keys) owned[keys[i]] = 1
     }
     !($1 in owned)
@@ -4211,6 +4296,7 @@ preserve_relaunch_meta() {
   echo "tasktmp=$TASK_TMP"
   echo "model=${MODEL:-default}"
   echo "effort=${EFFORT:-default}"
+  [ -z "${OMP_WORKER_AGENT:-}" ] || echo "omp_worker_agent=$OMP_WORKER_AGENT"
   [ -z "${BUSY_GEN:-}" ] || echo "busy_gen=$BUSY_GEN"
   echo "spawn_gen=$SPAWN_GEN"
   # Default-off writes no traceparent= line.

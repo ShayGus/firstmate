@@ -39,8 +39,31 @@
 # fm_ship_rule_one owns the mode-specific first ship safety rule shared by an
 # ordinary ship brief and the durable contract written during scout promotion.
 
-fm_brief_worker_role() {  # <state-dir> <task-id>
-  local state=$1 task_id=$2
+# fm_omp_ship_worker_agent owns the Israel-clock split that names an omp ship
+# task's implementation child: from 09:00 inclusive to 13:00 exclusive in
+# Asia/Jerusalem the captain's peak profile is peak-hours-worker, and every
+# other minute is off-peak-hours-worker. The optional <hh:mm> argument is the
+# injected deterministic input tests pass; without it the current Israel time
+# is resolved once, at spawn intake, because intake time and never recovery
+# time owns the choice.
+fm_omp_ship_worker_agent() {  # [<hh:mm>]
+  local clock=${1:-$(TZ=Asia/Jerusalem date +%H:%M)} hh
+  hh=${clock%%:*}
+  case "$hh" in
+    '' | *[!0-9]*)
+      echo "error: fm_omp_ship_worker_agent: invalid Israel time '$clock'" >&2
+      return 1
+      ;;
+  esac
+  if [ "$hh" -ge 9 ] && [ "$hh" -lt 13 ]; then
+    printf 'peak-hours-worker\n'
+  else
+    printf 'off-peak-hours-worker\n'
+  fi
+}
+
+fm_brief_worker_role() {  # <state-dir> <task-id> [<omp-worker-agent>]
+  local state=$1 task_id=$2 omp_worker_agent=${3:-}
   cat <<'EOF'
 # Current worker role contract
 You are a crewmate: an autonomous worker agent managed by firstmate.
@@ -53,6 +76,17 @@ Never inspect or change any other home's endpoint namespace; this authorization 
 When this task works on Firstmate itself, the repository root `AGENTS.md` (also imported by `CLAUDE.md`) is project content and the supervisor contract for the firstmate managing you: follow this brief instead of that supervisor contract.
 Project instructions still govern the work wherever they do not conflict with this worker identity, including `CONTRIBUTING.md` and `firstmate-coding-guidelines` for Firstmate changes.
 EOF
+  if [ -n "$omp_worker_agent" ]; then
+    cat <<'EOF'
+This OMP ship task is a durable coordinator: the isolated branch, steering inbox, restart recovery, validation pipeline, pull request, and CI lifecycle remain yours.
+You may still read, inspect, run focused verification, commit, drive the validation pipeline, push through your delivery path, and report status.
+You must not write or repair source code, tests, build scripts, deploy scripts, or product or runtime configuration yourself.
+Hand every implementation or review-fix edit to the named OMP worker agent through one `task` tool call at a time, so that agent's model list and fallback policy apply.
+Never delegate through a bash subprocess such as `omp -p`; that evades the gate that enforces the named agent and the one-child limit.
+Each `task` call carries exactly one task item naming the selected agent with no isolated worktree, and passes the complete instructions, owned files, known repository facts, acceptance criteria, and allowed and forbidden commands, so the child never redoes discovery you already did.
+EOF
+    printf 'The selected implementation agent for this task is %s, recorded in the task metadata and kept across relaunches regardless of the clock window a later launch runs in.\n' "$omp_worker_agent"
+  fi
 }
 
 fm_ship_rule_one() {  # <no-mistakes|direct-PR|local-only> <task-id>
