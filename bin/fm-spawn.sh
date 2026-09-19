@@ -151,12 +151,22 @@
 #   wizard with OMP_SKIP_SETUP=1, forces --auto-approve, pins the working
 #   directory with --cwd, and passes the tracked worker posture overlay
 #   .omp/fm-worker-overlay.yml through --config. That overlay pins composer
-#   shape, plan mode off, prewalk off, the non-interactive usage-reserve
-#   policy, and the coordinator child shape (task.maxConcurrency: 1,
-#   task.maxRecursionDepth: 1, task.isolation.enabled: false) for the one
-#   session only (--auto-approve alone owns approval); the
+#   shape, plan mode off, prewalk off, and the non-interactive usage-reserve
+#   policy for the one session only (--auto-approve alone owns approval); the
 #   captain's own ~/.omp/agent/config.yml (model roles, providers, theme) is
-#   never written.
+#   never written. A SHIP launch passes a SECOND --config,
+#   state/<task-id>.omp-coordinator.yml, which pins the coordinator child shape
+#   (task.maxConcurrency: 1, task.maxRecursionDepth: 1,
+#   task.isolation.enabled: false) for that task alone; those keys stay out of
+#   the shared overlay because every omp role loads it, and a scout or
+#   secondmate must not inherit a task-tool limit. Verified against omp
+#   18.1.11's and 18.2.6's settings schema (`omp config list`) and live against
+#   omp 18.2.6: maxRecursionDepth is the total child depth the session may
+#   create, so 1 lets the coordinator spawn exactly its implementation child
+#   and that child spawn nothing (0 removes the task tool from the coordinator
+#   entirely, live-verified 2026-09-19), maxConcurrency defaults to 32, and
+#   isolation.enabled defaults to false but is pinned so a captain's own true
+#   setting cannot divert the one child into a hidden worktree.
 #   A model written as <provider>/<id> is validated against `omp models --json`
 #   only when that provider appears in the listing; a provider absent from the
 #   listing (an extension-registered provider such as claude-bridge, which omp
@@ -291,6 +301,10 @@
 #                  turn-end extension, written by this script; outside the worktree so
 #                  omp's cwd-only auto-discovery cannot load it a second time)
 #     __OMPWORKERCFG__ absolute path to the tracked .omp/fm-worker-overlay.yml posture overlay
+#     __OMPCOORDCFG__ absolute path to state/<task-id>.omp-coordinator.yml, the
+#                  SHIP-only child-shape config written beside the extension and
+#                  passed as a second --config; never present on a scout or
+#                  secondmate launch, whose template omits the token
 #     __OPINPUT__   absolute path to the canonical operational-input encoder
 #     __WORKTREE__  absolute path to the task worktree
 #     __CURSORBIN__ resolved, cursor-verified executable for a cursor launch
@@ -1764,7 +1778,12 @@ launch_template() {
   omp)
     printf '%s' 'env -u CLAUDECODE -u PI_CODING_AGENT -u GROK_AGENT -u FM_PI_HARNESS -u GEMINI_CLI -u CURSOR_AGENT -u CURSOR_INVOKED_AS '
     if [ "$kind" = ship ]; then printf '%s' 'FM_ALLOW_SUBAGENT=1 '; fi
-    printf '%s' 'FM_OMP_HARNESS=omp OMP_SKIP_SETUP=1 __OMPBIN__ --config __OMPWORKERCFG__ --auto-approve --cwd __WORKTREE__'
+    printf '%s' 'FM_OMP_HARNESS=omp OMP_SKIP_SETUP=1 __OMPBIN__ --config __OMPWORKERCFG__'
+    # A SHIP launch adds the task-owned coordinator config as a SECOND
+    # --config: the child shape is the coordinator's alone, so scouts,
+    # secondmates, and every non-ship omp role keep exactly the shared overlay.
+    if [ "$kind" = ship ]; then printf '%s' ' --config __OMPCOORDCFG__'; fi
+    printf '%s' ' --auto-approve --cwd __WORKTREE__'
     if [ "$kind" = secondmate ]; then
       printf '%s' ' __MODELFLAG____EFFORTFLAG__"$(__OPINPUT__ encode launch-brief < __BRIEF__)"'
     else
@@ -2039,7 +2058,11 @@ omp)
       OMP_WORKER_AGENT=$(fm_meta_get "$RELAUNCH_META" omp_worker_agent)
     fi
     if [ -z "$OMP_WORKER_AGENT" ]; then
-      OMP_WORKER_AGENT=$(fm_omp_ship_worker_agent "${FM_SPAWN_OMP_CLOCK:-}") || exit 1
+      if [ -n "${FM_SPAWN_OMP_CLOCK:-}" ]; then
+        OMP_WORKER_AGENT=$(fm_omp_ship_worker_agent "$FM_SPAWN_OMP_CLOCK") || exit 1
+      else
+        OMP_WORKER_AGENT=$(fm_omp_ship_worker_agent) || exit 1
+      fi
     fi
     case "$OMP_WORKER_AGENT" in
     peak-hours-worker | off-peak-hours-worker) ;;
@@ -4021,7 +4044,34 @@ EOF
     # captain chose. Scouts carry no gate: this is a ship-only contract.
     OMP_AGENT_CONST=
     OMP_TASK_GATE=
+    OMP_COORDINATOR_CFG=
     if [ "$KIND" = ship ]; then
+      # The coordinator child shape is a SHIP-only setting, so it lives in its
+      # own task-owned config passed as a second --config rather than in the
+      # shared worker overlay every omp role loads. A scout or secondmate never
+      # receives this file, so neither inherits a task-tool limit that the
+      # coordinator contract does not ask of them. Verified against omp
+      # 18.1.11's and 18.2.6's settings schema (`omp config list`) and live
+      # against omp 18.2.6: maxRecursionDepth is the total child depth the
+      # session may create, so 1 means the coordinator can spawn exactly its
+      # implementation child and that child can spawn nothing (0 removes the
+      # task tool from the coordinator entirely, live-verified 2026-09-19),
+      # maxConcurrency defaults to 32 and is pinned to one, and
+      # isolation.enabled defaults to false but is pinned so a captain's own
+      # true setting cannot divert the one child into a hidden worktree.
+      OMP_COORDINATOR_CFG="$STATE/$ID.omp-coordinator.yml"
+      cat >"$OMP_COORDINATOR_CFG" <<'YML'
+# Ship-only coordinator child shape for one omp task; written by fm-spawn and
+# removed by teardown and relaunch. It is a SECOND --config beside the shared
+# worker overlay because these keys belong to the coordinator role alone: a
+# scout or secondmate must not inherit a task-tool limit. The reason for each
+# pin is owned by bin/fm-spawn.sh's header.
+task:
+  maxConcurrency: 1
+  maxRecursionDepth: 1
+  isolation:
+    enabled: false
+YML
       OMP_AGENT_CONST="const FM_WORKER_AGENT = \"$OMP_WORKER_AGENT\";"
       OMP_TASK_GATE=$(cat <<GATE
   pi.on("tool_call", async (event: any) => {
@@ -4460,6 +4510,15 @@ LAUNCH=${LAUNCH//__PITURNEND__/$sq_piturnend}
 LAUNCH=${LAUNCH//__PIWATCH__/$sq_piwatch}
 LAUNCH=${LAUNCH//__OMPEXT__/$sq_ompext}
 LAUNCH=${LAUNCH//__OMPWORKERCFG__/$sq_ompcfg}
+# Only a ship launch's template carries this token, so an empty value can never
+# reach a non-ship command line.
+if [[ $LAUNCH == *__OMPCOORDCFG__* ]]; then
+  [ -n "${OMP_COORDINATOR_CFG:-}" ] || {
+    echo "error: omp ship launch resolved no coordinator config path" >&2
+    exit 1
+  }
+  LAUNCH=${LAUNCH//__OMPCOORDCFG__/$(shell_quote "$OMP_COORDINATOR_CFG")}
+fi
 LAUNCH=${LAUNCH//__OPINPUT__/$sq_opinput}
 case "$HARNESS" in
 pi | pi-signed) LAUNCH=${LAUNCH//__PIBIN__/"$(shell_quote "$PI_BIN")"} ;;

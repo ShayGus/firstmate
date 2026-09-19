@@ -162,8 +162,9 @@ A deliberate use therefore requires restarting the session with the variable set
 One standing deliberate use is wired at launch: `bin/fm-spawn.sh` sets `FM_ALLOW_SUBAGENT=1` on every omp SHIP launch and on nothing else - never a scout, secondmate, non-omp worker, or primary.
 The omp ship worker is a durable coordinator, not an untracked alternative to the fleet: `bin/fm-spawn.sh` keeps owning the worktree, steering inbox, metadata, and delivery, and the worker's per-task extension (`state/<id>.omp-ext.ts`) denies every omp `task` call that is not exactly one non-isolated item naming `omp_worker_agent=` from the task's metadata.
 That agent is resolved once at intake by `fm_omp_ship_worker_agent` in `bin/fm-dod-lib.sh` - `peak-hours-worker` from 09:00 inclusive to 13:00 exclusive in `Asia/Jerusalem`, otherwise `off-peak-hours-worker` - and a relaunch reuses the recorded name even when the clock is in the other window.
-The tracked worker posture overlay `.omp/fm-worker-overlay.yml` pins `task.maxConcurrency: 1`, `task.maxRecursionDepth: 1`, and `task.isolation.enabled: false`, so the coordinator can create exactly one level of child and that child cannot fan out, and cannot write a second hidden worktree.
-`tests/fm-omp-harness.test.sh` owns the executable contracts for the launch shape, the metadata reuse, the gate, and the overlay pins.
+The ship-only coordinator config `state/<id>.omp-coordinator.yml` pins `task.maxConcurrency: 1`, `task.maxRecursionDepth: 1`, and `task.isolation.enabled: false`, so the coordinator can create exactly one level of child and that child cannot fan out, and cannot write a second hidden worktree.
+It is a second `--config` written and passed only by an omp SHIP spawn, never a setting in the shared `.omp/fm-worker-overlay.yml`, so a scout or secondmate loads no task-tool limit the coordinator contract does not ask of it.
+`tests/fm-omp-harness.test.sh` owns the executable contracts for the launch shape, the metadata reuse, the gate, and the ship-only coordinator config.
 
 The escape hatch does not affect any local Claude deny list.
 A tool removed from the schema stays removed, so a genuinely intended use of a locally denied tool also requires narrowing or removing that local entry before launch.

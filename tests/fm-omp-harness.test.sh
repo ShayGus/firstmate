@@ -502,9 +502,56 @@ test_ship_coordinator_nine_oclock_boundary_and_nonomp_ship() {
     *"FM_ALLOW_SUBAGENT=1"*) fail "a non-omp ship launch must never carry the omp coordinator's guard escape: $launch" ;;
   esac
   assert_absent "$state/omp-ship-claude-q8.omp-ext.ts" "a non-omp ship must not receive an omp extension"
+  assert_absent "$state/omp-ship-claude-q8.omp-coordinator.yml" "a non-omp ship must not receive an omp coordinator config"
   [ -f "$state/$id.meta" ] && grep -q '^omp_worker_agent=' "$state/$id.meta" \
     && fail "a non-omp ship must record no omp_worker_agent"
   pass "fm-spawn: 09:00 intake records peak-hours-worker and non-omp ships carry no coordinator wiring"
+}
+
+test_omp_scout_and_secondmate_carry_no_coordinator_config() {
+  local rec id launch out
+  # An omp SCOUT and an omp SECONDMATE both load the shared worker overlay, so
+  # neither may receive the ship-only coordinator config or its task-tool pins.
+  id=omp-scout-nocfg-q12
+  rec=$(make_spawn_case scout-nocfg omp "$id")
+  read_case_record "$rec"
+  out=$(run_scout_spawn "$HOME_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$LAUNCH_LOG" "$id" "$PROJ_DIR" --harness omp)
+  expect_code 0 $? "an omp scout spawn should succeed: $out"
+  assert_absent "$HOME_DIR/state/$id.omp-coordinator.yml" "an omp scout must receive no coordinator config"
+  launch=$(cat "$LAUNCH_LOG")
+  case "$launch" in
+    *".omp-coordinator.yml"*) fail "an omp scout launch must not pass a coordinator config: $launch" ;;
+    *"FM_ALLOW_SUBAGENT=1"*) fail "an omp scout must not carry the ship coordinator's guard escape: $launch" ;;
+  esac
+  assert_contains "$launch" "--config '$ROOT/.omp/fm-worker-overlay.yml' --auto-approve" \
+    "an omp scout must still load exactly the shared worker overlay: $launch"
+
+  local world home fakebin launchlog
+  world="$TMP_ROOT/secondmate-nocfg"
+  home="$world/sm"
+  mkdir -p "$world/home/state" "$world/home/data" "$world/home/config" "$home/bin" "$home/data"
+  printf '# Firstmate\n' > "$home/AGENTS.md"
+  printf 'sm\n' > "$home/.fm-secondmate-home"
+  printf 'charter\n' > "$home/data/charter.md"
+  fakebin=$(make_spawn_fakebin "$world/fake" claude)
+  make_fake_omp "$fakebin"
+  launchlog="$world/launch.log"
+  : > "$launchlog"
+  # FM_BACKEND=tmux pins the fake tmux even where the developer shell carries a
+  # live Herdr environment; without it auto-detection would spawn a real pane.
+  out=$(PATH="$fakebin:$PATH" TMUX='fake,1,0' FM_BACKEND=tmux CLAUDECODE=1 \
+    FM_ROOT_OVERRIDE='' FM_HOME="$world/home" \
+    FM_STATE_OVERRIDE="$world/home/state" FM_DATA_OVERRIDE="$world/home/data" \
+    FM_PROJECTS_OVERRIDE="$world/home/projects" FM_CONFIG_OVERRIDE="$world/home/config" \
+    FM_SPAWN_NO_GUARD=1 FM_FAKE_LAUNCH_LOG="$launchlog" \
+    "$ROOT/bin/fm-spawn.sh" sm "$home" omp --secondmate 2>&1)
+  expect_code 0 $? "an omp secondmate spawn should succeed: $out"
+  assert_absent "$world/home/state/sm.omp-coordinator.yml" "an omp secondmate must receive no coordinator config"
+  launch=$(cat "$launchlog")
+  case "$launch" in
+    *".omp-coordinator.yml"*) fail "an omp secondmate launch must not pass a coordinator config: $launch" ;;
+  esac
+  pass "fm-spawn: omp scouts and secondmates receive no coordinator config"
 }
 
 test_ship_relaunch_reuses_stored_agent_across_clock_window() {
@@ -557,11 +604,40 @@ test_ship_relaunch_reuses_stored_agent_across_clock_window() {
 
 test_worker_overlay_pins_task_shape() {
   local cfg="$ROOT/.omp/fm-worker-overlay.yml"
-  assert_grep 'maxConcurrency: 1' "$cfg" "the overlay must pin one-child concurrency"
-  assert_grep 'maxRecursionDepth: 1' "$cfg" "the overlay must allow exactly one child level and forbid fan-out"
-  assert_grep 'isolation:' "$cfg" "the overlay must pin the isolation block"
-  assert_grep 'enabled: false' "$cfg" "the overlay must keep the one child in the shared worktree"
-  pass "worker overlay: one child, no grandchild, shared worktree"
+  # The shared overlay is loaded by EVERY omp role, so it must carry no task-tool
+  # limit at all: those keys belong to the coordinator role alone.
+  assert_no_grep 'task:' "$cfg" "the shared worker overlay must not pin task-tool settings for scouts and secondmates"
+  assert_no_grep 'maxConcurrency' "$cfg" "the shared worker overlay must not pin one-child concurrency for every omp role"
+  assert_no_grep 'maxRecursionDepth' "$cfg" "the shared worker overlay must not pin child depth for every omp role"
+  assert_no_grep 'isolation' "$cfg" "the shared worker overlay must not pin isolation for every omp role"
+
+  # A ship launch writes the coordinator config into its own task state and
+  # passes it as a second --config; a scout or secondmate never receives either.
+  local id=omp-coord-cfg-q10 rec launch state coordcfg
+  rec=$(make_spawn_case ship-coordcfg omp "$id")
+  read_case_record "$rec"
+  run_ship_spawn "$HOME_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$LAUNCH_LOG" 08:59 "$id" "$PROJ_DIR" >/dev/null || fail "ship spawn failed"
+  state="$HOME_DIR/state"
+  coordcfg="$state/$id.omp-coordinator.yml"
+  assert_present "$coordcfg" "an omp ship launch must write its task-owned coordinator config"
+  assert_grep 'maxConcurrency: 1' "$coordcfg" "the coordinator config must pin one-child concurrency"
+  assert_grep 'maxRecursionDepth: 1' "$coordcfg" "the coordinator config must allow exactly one child level and forbid fan-out"
+  assert_grep 'isolation:' "$coordcfg" "the coordinator config must pin the isolation block"
+  assert_grep 'enabled: false' "$coordcfg" "the coordinator config must keep the one child in the shared worktree"
+  launch=$(cat "$LAUNCH_LOG")
+  assert_contains "$launch" "--config '$ROOT/.omp/fm-worker-overlay.yml' --config '$coordcfg'" \
+    "an omp ship launch must pass the coordinator config as a second --config: $launch"
+
+  local scout_id=omp-coord-scout-q11
+  rec=$(make_spawn_case ship-coordcfg-scout omp "$scout_id")
+  read_case_record "$rec"
+  run_scout_spawn "$HOME_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$LAUNCH_LOG" "$scout_id" "$PROJ_DIR" --harness omp >/dev/null || fail "scout spawn failed"
+  assert_absent "$HOME_DIR/state/$scout_id.omp-coordinator.yml" "an omp scout must receive no coordinator config"
+  launch=$(cat "$LAUNCH_LOG")
+  case "$launch" in
+    *".omp-coordinator.yml"*) fail "an omp scout launch must not pass a coordinator config: $launch" ;;
+  esac
+  pass "omp ship-only coordinator config: one child, no grandchild, shared worktree, absent for scouts"
 }
 
 # --- 4. Control, composer, supervision model -----------------------------------
@@ -571,7 +647,8 @@ test_control_composer_and_model_tables() {
   [ "$(fm_control_interrupt_key omp)" = Escape ] || fail "omp interrupt key must be Escape"
   [ "$(fm_control_interrupt_repeat omp)" = 1 ] || fail "omp interrupts on a single press"
   [ -z "$(fm_control_interrupt_clear_key omp)" ] || fail "omp leaves its composer empty and needs no clear key"
-  [ "$(fm_control_harness_wiring_paths omp /wt /st id1)" = "/st/id1.omp-ext.ts" ] || fail "omp wiring path must be the state-resident extension"
+  [ "$(fm_control_harness_wiring_paths omp /wt /st id1)" = "/st/id1.omp-ext.ts
+/st/id1.omp-coordinator.yml" ] || fail "omp wiring paths must be the state-resident extension plus the ship-only coordinator config"
   printf 'Working…\n' | fm_busy_lines_match omp || fail "omp busy regex must match the TUI ellipsis form"
   printf 'Working...\n' | fm_busy_lines_match omp && fail "omp busy regex must not match the three-dot form no supervised pane renders"
   printf ' ⠧ 11s  · gpt-6-astra\n' | fm_busy_lines_match omp || fail "omp busy regex must match the braille spinner plus elapsed cell"
@@ -804,6 +881,7 @@ test_secondmate_config_pinned_model_is_validated
 test_busy_extension_lifecycle
 test_ship_coordinator_launch_meta_and_gate
 test_ship_coordinator_nine_oclock_boundary_and_nonomp_ship
+test_omp_scout_and_secondmate_carry_no_coordinator_config
 test_ship_relaunch_reuses_stored_agent_across_clock_window
 test_worker_overlay_pins_task_shape
 test_control_composer_and_model_tables

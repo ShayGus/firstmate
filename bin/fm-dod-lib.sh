@@ -47,14 +47,31 @@
 # is resolved once, at spawn intake, because intake time and never recovery
 # time owns the choice.
 fm_omp_ship_worker_agent() {  # [<hh:mm>]
-  local clock=${1:-$(TZ=Asia/Jerusalem date +%H:%M)} hh
-  hh=${clock%%:*}
-  case "$hh" in
-    '' | *[!0-9]*)
-      echo "error: fm_omp_ship_worker_agent: invalid Israel time '$clock'" >&2
+  local clock hh mm
+  if [ "$#" -gt 0 ]; then
+    # An argument was supplied, so it is the injected value and is validated as
+    # one: falling back to the wall clock here would let a malformed injection
+    # silently pass as a real time.
+    clock=$1
+  else
+    clock=$(TZ=Asia/Jerusalem date +%H:%M)
+  fi
+  case "$clock" in
+    [0-9][0-9]:[0-9][0-9]) ;;
+    *)
+      echo "error: fm_omp_ship_worker_agent: invalid Israel time '$clock'; expected HH:MM" >&2
       return 1
       ;;
   esac
+  hh=${clock%%:*}
+  mm=${clock#*:}
+  # A real clock only ever yields 00-23 and 00-59, so anything outside that is a
+  # malformed injection rather than a time this function should interpret:
+  # without the range test, 08:99 would silently ride the hour window.
+  if [ "$hh" -gt 23 ] || [ "$mm" -gt 59 ]; then
+    echo "error: fm_omp_ship_worker_agent: invalid Israel time '$clock'; hours are 00-23 and minutes 00-59" >&2
+    return 1
+  fi
   if [ "$hh" -ge 9 ] && [ "$hh" -lt 13 ]; then
     printf 'peak-hours-worker\n'
   else
@@ -68,8 +85,18 @@ fm_brief_worker_role() {  # <state-dir> <task-id> [<omp-worker-agent>]
 # Current worker role contract
 You are a crewmate: an autonomous worker agent managed by firstmate.
 This section establishes your current identity before every project or task instruction below and supersedes any conflicting role identity in those instructions.
-Do the assigned work yourself and report only to firstmate; do not adopt a firstmate or secondmate supervisor identity, delegate the task, run fleet supervision, or address the captain.
 EOF
+  # The identity sentence is the same decision as the rest of this contract, so
+  # it is stated once per role instead of being printed for everyone and then
+  # contradicted below: an ordinary worker does the work itself, while an omp
+  # ship coordinator (the role the later paragraphs describe) must delegate the
+  # implementation edits. Printing the direct-worker wording in the coordinator
+  # brief would leave one owner arguing with itself.
+  if [ -n "$omp_worker_agent" ]; then
+    printf '%s\n' "You are this task's durable coordinator: you keep the branch, steering inbox, restart recovery, validation pipeline, pull request, and CI lifecycle yourself, and you hand every implementation edit to one named worker agent. Never adopt a firstmate or secondmate supervisor identity, run fleet supervision, or address the captain."
+  else
+    printf '%s\n' "Do the assigned work yourself and report only to firstmate; do not adopt a firstmate or secondmate supervisor identity, delegate the task, run fleet supervision, or address the captain."
+  fi
   printf "Your steering inbox is \`%s/%s.inbox\`; this exact path belongs to your current task even when it is outside the worktree or under the supervising firstmate home, so read and acknowledge its messages and do not reject it as another home's state.\n" "$state" "$task_id"
   cat <<'EOF'
 Never inspect or change any other home's endpoint namespace; this authorization is limited to the exact task paths named by this brief.
@@ -78,7 +105,6 @@ Project instructions still govern the work wherever they do not conflict with th
 EOF
   if [ -n "$omp_worker_agent" ]; then
     cat <<'EOF'
-This OMP ship task is a durable coordinator: the isolated branch, steering inbox, restart recovery, validation pipeline, pull request, and CI lifecycle remain yours.
 You may still read, inspect, run focused verification, commit, drive the validation pipeline, push through your delivery path, and report status.
 You must not write or repair source code, tests, build scripts, deploy scripts, or product or runtime configuration yourself.
 Hand every implementation or review-fix edit to the named OMP worker agent through one `task` tool call at a time, so that agent's model list and fallback policy apply.

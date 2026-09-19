@@ -938,11 +938,14 @@ test_omp_worker_agent_contract() {
   [ "$got" = off-peak-hours-worker ] || fail "13:00 Israel must select off-peak-hours-worker, got '$got'"
   got=$(fm_omp_ship_worker_agent 00:07)
   [ "$got" = off-peak-hours-worker ] || fail "00:07 Israel must select off-peak-hours-worker, got '$got'"
-  got=$(fm_omp_ship_worker_agent 08:99)
-  [ "$got" = off-peak-hours-worker ] || fail "minutes must not widen the hour window, got '$got'"
-  if got=$(fm_omp_ship_worker_agent "nonsense" 2>&1); then
-    fail "an invalid injected time must fail, got '$got'"
-  fi
+  # A malformed injection is refused rather than interpreted: 08:99 is not a
+  # time, and accepting it would let a bogus minute ride the hour window.
+  local bad
+  for bad in 08:99 24:00 99:99 23:60 nonsense 9:00 09:5 ''; do
+    if got=$(fm_omp_ship_worker_agent "$bad" 2>&1); then
+      fail "the malformed injected time '$bad' must fail, got '$got'"
+    fi
+  done
   pass "fm-dod-lib: the Israel-clock split selects the named implementation agent at every boundary"
 
   local dir
@@ -950,11 +953,22 @@ test_omp_worker_agent_contract() {
   mkdir -p "$dir/state"
   fm_brief_worker_role "$dir/state" omp-t1 > "$dir/plain.md"
   assert_grep '# Current worker role contract' "$dir/plain.md" "the plain role contract lost its heading"
+  assert_grep 'Do the assigned work yourself' "$dir/plain.md" "the plain worker must still be told to do the work itself"
+  assert_grep 'do not adopt a firstmate or secondmate supervisor identity, delegate the task' "$dir/plain.md" \
+    "the plain worker must still be told not to delegate the task"
   assert_no_grep 'coordinator' "$dir/plain.md" "a launch with no selected agent must not read as a coordinator"
   assert_no_grep 'peak-hours-worker' "$dir/plain.md" "a launch with no selected agent must not name an agent"
 
   fm_brief_worker_role "$dir/state" omp-t2 peak-hours-worker > "$dir/coordinator.md"
   assert_grep 'durable coordinator' "$dir/coordinator.md" "the omp ship contract must say coordinator"
+  assert_grep 'hand every implementation edit to one named worker agent' "$dir/coordinator.md" \
+    "the coordinator identity must order the delegation it depends on"
+  # The identity is stated once per role: the coordinator brief must never carry
+  # the direct-worker instruction that the rest of the same contract contradicts.
+  assert_no_grep 'Do the assigned work yourself' "$dir/coordinator.md" \
+    "the coordinator contract must not also order the worker to do the work itself"
+  assert_no_grep 'delegate the task' "$dir/coordinator.md" \
+    "the coordinator contract must not also forbid the delegation it requires"
   assert_grep 'must not write or repair source code' "$dir/coordinator.md" "the coordinator contract must forbid direct implementation"
   assert_grep 'peak-hours-worker' "$dir/coordinator.md" "the coordinator contract must name the selected agent"
   assert_grep 'Never delegate through a bash subprocess' "$dir/coordinator.md" "the coordinator contract must forbid bash emulation of the child"

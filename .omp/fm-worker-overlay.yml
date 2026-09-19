@@ -25,22 +25,3 @@ retry:
   # `confirm` pops a dialog when a usage window runs low; `auto` lets omp fall
   # through the captain's own fallback chain without a keystroke.
   usageReservePolicy: auto
-task:
-  # An omp ship task is a durable coordinator (docs/subagent-guard.md): it
-  # hands implementation to one named child, so at most one task child may run
-  # at a time, the child must never fan out into a grandchild, and the child
-  # writes the task's existing worktree rather than an isolated copy. The
-  # per-task extension in state/<id>.omp-ext.ts enforces which agent that one
-  # item names; these three keys make the shape mechanically impossible to
-  # widen. Verified against omp 18.1.11's and 18.2.6's own settings schema
-  # (`omp config list`) and live against omp 18.2.6: maxRecursionDepth is the
-  # total child depth the session may create, so 1 means the coordinator can
-  # spawn exactly its implementation child and that child can spawn nothing
-  # (0 removes the task tool from the coordinator entirely, live-verified
-  # 2026-09-19), maxConcurrency defaults to 32 and is pinned to one, and
-  # isolation.enabled defaults to false but is pinned so a captain's own true
-  # setting cannot divert the one child into a hidden worktree.
-  maxConcurrency: 1
-  maxRecursionDepth: 1
-  isolation:
-    enabled: false
