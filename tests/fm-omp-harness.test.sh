@@ -464,6 +464,17 @@ test_ship_coordinator_launch_meta_and_gate() {
   gate_verdict=$(drive_omp_task_gate "$ext" task '{"tasks":[]}')
   [ "$(printf '%s' "$gate_verdict" | jq -r '.block // empty')" = "true" ] \
     || fail "an empty task list must be blocked: $gate_verdict"
+  # omp's runtime also accepts the flat single-item shape while task.batch is on
+  # (omp://tools/task.md "Inputs"), so the gate must read that shape's item too
+  # instead of refusing a legitimate single non-isolated spawn.
+  gate_verdict=$(drive_omp_task_gate "$ext" task '{"agent":"off-peak-hours-worker","task":"implement"}')
+  [ "$gate_verdict" = "{}" ] \
+    || fail "a flat single-item call for the recorded agent must pass untouched: $gate_verdict"
+  gate_verdict=$(drive_omp_task_gate "$ext" task '{"agent":"peak-hours-worker","task":"implement"}')
+  [ "$(printf '%s' "$gate_verdict" | jq -r '.block // empty')" = "true" ] \
+    || fail "a flat call naming the wrong agent must be blocked: $gate_verdict"
+  printf '%s' "$gate_verdict" | jq -e '.reason | test("metadata-selected")' >/dev/null \
+    || fail "the flat wrong-agent refusal must name the metadata-selected agent: $gate_verdict"
   gate_verdict=$(drive_omp_task_gate "$ext" bash '{"command":"ls"}')
   [ "$gate_verdict" = "{}" ] || fail "a bash call must pass the gate untouched: $gate_verdict"
   pass "fm-spawn: the omp ship coordinator records off-peak at 08:59, carries the guard escape, and gates the task tool to one named child"

@@ -4030,8 +4030,15 @@ EOF
         why +
         " Exactly one named child, " + FM_WORKER_AGENT + ", owns implementation in this task's existing Firstmate worktree: pass exactly one task item naming that agent, with no isolated worktree, carrying the complete instructions, owned files, repository facts, acceptance criteria, and allowed and forbidden commands.",
     });
-    const input = (event.input || {}) as { tasks?: unknown };
-    const items = Array.isArray(input.tasks) ? input.tasks : [];
+    const input = (event.input || {}) as { tasks?: unknown; agent?: unknown; isolated?: unknown };
+    // omp's task input is shape-swapped by task.batch: the item lives at
+    // tasks[0] in the batch shape and at the top level in the flat shape its
+    // runtime still accepts for internal callers and stale transcripts
+    // (omp://tools/task.md "Inputs"). Both carry exactly one item here, so the
+    // gate reads it from whichever shape arrived instead of falsely refusing a
+    // single non-isolated spawn because a captain turned batch off. omp's own
+    // shape and context validation still runs after this handler.
+    const items = Array.isArray(input.tasks) ? input.tasks : [input];
     if (items.length !== 1) {
       return refuse("A task call must carry exactly one task item (got " + items.length + ").");
     }
