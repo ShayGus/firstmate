@@ -108,7 +108,7 @@ EOF
 You may still read, inspect, run focused verification, commit, drive the validation pipeline, push through your delivery path, and report status.
 You must not write or repair source code, tests, build scripts, deploy scripts, or product or runtime configuration yourself.
 Hand every implementation or review-fix edit to the named OMP worker agent through one `task` tool call at a time, so that agent's model list and fallback policy apply.
-Never delegate through a bash subprocess such as `omp -p`; that evades the gate that enforces the named agent and the one-child limit.
+Never delegate through a bash subprocess such as `omp -p` or through the `eval` tool; both evade the gate that enforces the named agent and the one-child limit, so `eval` is closed for this task.
 Each `task` call carries exactly one task item naming the selected agent with no isolated worktree, and passes the complete instructions, owned files, known repository facts, acceptance criteria, and allowed and forbidden commands, so the child never redoes discovery you already did.
 EOF
     printf 'The selected implementation agent for this task is %s, recorded in the task metadata and kept across relaunches regardless of the clock window a later launch runs in.\n' "$omp_worker_agent"

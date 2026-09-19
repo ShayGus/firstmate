@@ -477,6 +477,29 @@ test_ship_coordinator_launch_meta_and_gate() {
     || fail "the flat wrong-agent refusal must name the metadata-selected agent: $gate_verdict"
   gate_verdict=$(drive_omp_task_gate "$ext" bash '{"command":"ls"}')
   [ "$gate_verdict" = "{}" ] || fail "a bash call must pass the gate untouched: $gate_verdict"
+  # omp's eval tool exposes agent() and workpool(), which would create a child the
+  # task gate never sees (omp://tools/eval.md "Prelude helpers"), so eval is
+  # closed for the coordinator as a whole.
+  gate_verdict=$(drive_omp_task_gate "$ext" eval '{"language":"py","code":"h = agent(\"do work\", agent=\"off-peak-hours-worker\")"}')
+  [ "$(printf '%s' "$gate_verdict" | jq -r '.block // empty')" = "true" ] \
+    || fail "an eval call must be blocked for the coordinator: $gate_verdict"
+  printf '%s' "$gate_verdict" | jq -e '.reason | test("agent\\(\\) and workpool\\(\\)")' >/dev/null \
+    || fail "the eval refusal must name the helpers it closes: $gate_verdict"
+  printf '%s' "$gate_verdict" | jq -e '.reason | test("read, grep, glob, bash, and lsp")' >/dev/null \
+    || fail "the eval refusal must direct ordinary work to the approved tools: $gate_verdict"
+  printf '%s' "$gate_verdict" | jq -e --arg a "off-peak-hours-worker" '.reason | test($a)' >/dev/null \
+    || fail "the eval refusal must name the selected agent: $gate_verdict"
+  # The block is on the tool, not on any spelling inside a cell.
+  gate_verdict=$(drive_omp_task_gate "$ext" eval '{"language":"js","code":"return 1 + 1"}')
+  [ "$(printf '%s' "$gate_verdict" | jq -r '.block // empty')" = "true" ] \
+    || fail "even an innocent eval cell must be blocked, since the tool is closed as a whole: $gate_verdict"
+  # Ordinary coordinator work still passes.
+  for tool_input in 'read:{"path":"README.md"}' 'grep:{"pattern":"x"}' 'glob:{"pattern":"*.sh"}' 'lsp:{"action":"symbols"}'; do
+    tool_name=${tool_input%%:*}
+    input_json=${tool_input#*:}
+    gate_verdict=$(drive_omp_task_gate "$ext" "$tool_name" "$input_json")
+    [ "$gate_verdict" = "{}" ] || fail "an ordinary $tool_name call must pass the gate untouched: $gate_verdict"
+  done
   pass "fm-spawn: the omp ship coordinator records off-peak at 08:59, carries the guard escape, and gates the task tool to one named child"
 }
 
@@ -518,6 +541,24 @@ test_omp_scout_and_secondmate_carry_no_coordinator_config() {
   out=$(run_scout_spawn "$HOME_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$LAUNCH_LOG" "$id" "$PROJ_DIR" --harness omp)
   expect_code 0 $? "an omp scout spawn should succeed: $out"
   assert_absent "$HOME_DIR/state/$id.omp-coordinator.yml" "an omp scout must receive no coordinator config"
+  # A scout has no coordinator gate at all, so its extension must register no
+  # tool_call handler: eval and task stay exactly as omp ships them.
+  local handlers
+  handlers=$(EXT_PATH="$HOME_DIR/state/$id.omp-ext.ts" node --input-type=module 2>&1 <<'EOF'
+import { pathToFileURL } from "node:url";
+const mod = await import(pathToFileURL(process.env.EXT_PATH).href);
+const names = [];
+mod.default({ on: (name) => { names.push(name); } });
+console.log(names.join(","));
+EOF
+)
+  case "$handlers" in
+    *tool_call*) fail "an omp scout extension must register no tool_call gate: $handlers" ;;
+  esac
+  case "$handlers" in
+    *agent_start*) ;;
+    *) fail "an omp scout extension must still register its busy-state handlers: $handlers" ;;
+  esac
   launch=$(cat "$LAUNCH_LOG")
   case "$launch" in
     *".omp-coordinator.yml"*) fail "an omp scout launch must not pass a coordinator config: $launch" ;;

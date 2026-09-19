@@ -972,6 +972,8 @@ test_omp_worker_agent_contract() {
   assert_grep 'must not write or repair source code' "$dir/coordinator.md" "the coordinator contract must forbid direct implementation"
   assert_grep 'peak-hours-worker' "$dir/coordinator.md" "the coordinator contract must name the selected agent"
   assert_grep 'Never delegate through a bash subprocess' "$dir/coordinator.md" "the coordinator contract must forbid bash emulation of the child"
+  assert_grep 'both evade the gate that enforces the named agent' "$dir/coordinator.md" "the coordinator contract must close the eval delegation path alongside bash"
+  assert_no_grep 'eval' "$dir/plain.md" "an ordinary worker must not be told eval is closed"
   assert_grep 'no isolated worktree' "$dir/coordinator.md" "the coordinator contract must keep the child in the existing worktree"
   assert_grep 'exactly one task item' "$dir/coordinator.md" "the coordinator contract must demand one task item per call"
   pass "fm-brief: the omp ship role contract renders the coordinator scope and the selected agent"

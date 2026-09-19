@@ -4075,7 +4075,21 @@ YML
       OMP_AGENT_CONST="const FM_WORKER_AGENT = \"$OMP_WORKER_AGENT\";"
       OMP_TASK_GATE=$(cat <<GATE
   pi.on("tool_call", async (event: any) => {
-    if (!event || event.type !== "tool_call" || event.toolName !== "task") return {};
+    if (!event || event.type !== "tool_call") return {};
+    // The eval tool runs a whole interpreter, and its agent()/workpool()
+    // helpers create children the task gate below never sees, which would
+    // bypass the selected-agent, one-item, and shared-worktree controls. The
+    // tool is therefore refused as a whole rather than pattern-matched: a
+    // source parse would have to stay ahead of every spelling the interpreter
+    // accepts, while the coordinator needs no eval to do its own work.
+    if (event.toolName === "eval") {
+      return {
+        block: true,
+        reason:
+          "The eval tool is closed for this task's coordinator: its agent() and workpool() helpers would create a child outside the one gated delegation path. Do ordinary coordinator work with read, grep, glob, bash, and lsp; send every implementation or review-fix edit through the task tool, which admits exactly one non-isolated item naming " + FM_WORKER_AGENT + ".",
+      };
+    }
+    if (event.toolName !== "task") return {};
     const refuse = (why: string): Record<string, unknown> => ({
       block: true,
       reason:
