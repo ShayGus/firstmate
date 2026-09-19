@@ -435,13 +435,14 @@ test_ship_coordinator_launch_meta_and_gate() {
   assert_grep 'durable coordinator' "$HOME_DIR/data/$id/launch-brief.md" "the ship launch brief must announce the coordinator role"
   assert_grep 'must not write or repair source code' "$HOME_DIR/data/$id/launch-brief.md" "the launch brief must forbid direct implementation"
   assert_grep 'off-peak-hours-worker' "$HOME_DIR/data/$id/launch-brief.md" "the launch brief must name the selected implementation agent"
+  # The extension's own bytes are never asserted: the drives below prove the
+  # pinned agent and the registered handler behaviorally. An allow case must be
+  # exactly {} so a missing handler or a crashed child fails instead of reading
+  # as a pass.
   ext="$state/$id.omp-ext.ts"
-  assert_grep 'FM_WORKER_AGENT = "off-peak-hours-worker"' "$ext" "the ship extension must pin the recorded agent"
-  assert_grep 'tool_call' "$ext" "the ship extension must register the task gate"
-
   gate_verdict=$(drive_omp_task_gate "$ext" task '{"tasks":[{"agent":"off-peak-hours-worker","prompt":"implement"}]}')
-  [ "$(printf '%s' "$gate_verdict" | jq -r '.block // empty')" = "" ] \
-    || fail "a single non-isolated item for the recorded agent must pass: $gate_verdict"
+  [ "$gate_verdict" = "{}" ] \
+    || fail "a single non-isolated item for the recorded agent must pass untouched: $gate_verdict"
   gate_verdict=$(drive_omp_task_gate "$ext" task '{"tasks":[{"agent":"peak-hours-worker"}]}')
   [ "$(printf '%s' "$gate_verdict" | jq -r '.block // empty')" = "true" ] \
     || fail "the wrong agent must be blocked: $gate_verdict"
@@ -496,7 +497,7 @@ test_ship_coordinator_nine_oclock_boundary_and_nonomp_ship() {
 }
 
 test_ship_relaunch_reuses_stored_agent_across_clock_window() {
-  local rec id=omp-ship-relaunch-q9 out status state window relaunch_stub relaunch_log
+  local rec id=omp-ship-relaunch-q9 out status state window relaunch_stub relaunch_log gate_verdict
   rec=$(make_spawn_case ship-relaunch omp "$id")
   read_case_record "$rec"
   state="$HOME_DIR/state"
@@ -527,7 +528,15 @@ test_ship_relaunch_reuses_stored_agent_across_clock_window() {
   [ "$(grep -c '^omp_worker_agent=' "$state/$id.meta")" = 1 ] \
     || fail "the relaunched record must keep exactly one omp_worker_agent line"
   assert_grep 'off-peak-hours-worker' "$HOME_DIR/data/$id/launch-brief.md" "the relaunched brief must keep naming the stored agent"
-  assert_grep 'FM_WORKER_AGENT = "off-peak-hours-worker"' "$state/$id.omp-ext.ts" "the relaunched extension must pin the stored agent"
+  # The relaunched extension still admits the STORED agent and still refuses
+  # the other window's agent, which is the behavioral form of "the relaunch
+  # reused what intake chose".
+  gate_verdict=$(drive_omp_task_gate "$state/$id.omp-ext.ts" task '{"tasks":[{"agent":"off-peak-hours-worker"}]}')
+  [ "$gate_verdict" = "{}" ] \
+    || fail "the relaunched extension must still admit the stored agent: $gate_verdict"
+  gate_verdict=$(drive_omp_task_gate "$state/$id.omp-ext.ts" task '{"tasks":[{"agent":"peak-hours-worker"}]}')
+  [ "$(printf '%s' "$gate_verdict" | jq -r '.block // empty')" = "true" ] \
+    || fail "the relaunched extension must still refuse the other window's agent: $gate_verdict"
   case "$(cat "$relaunch_log")" in
     *"FM_ALLOW_SUBAGENT=1 "*) ;;
     *) fail "the relaunched omp ship must still carry the guard escape: $(cat "$relaunch_log")" ;;
