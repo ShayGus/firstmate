@@ -539,6 +539,8 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
     && fail "a two-cell draft with trailing prose must not be mistaken for omp status furniture"
   _fm_composer_row_is_omp_status 'review · Action: keep backups · 9.0%/1M' \
     && fail "a two-cell draft without a context marker must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status 'review · Action: keep backups · 9.0%/1.1M' \
+    && fail "a fractional context-like total without a context marker must remain draft text"
   _fm_composer_row_is_omp_status '● review backups' \
     && fail "a bullet-led draft must not be mistaken for omp plugin furniture"
   _fm_composer_row_is_omp_status '○ review backups' \
@@ -546,11 +548,14 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   assert_screen "idle omp 18.2.11 (circle plugin row)" empty "$CAPS_STYLED" "$idle_circle"
   assert_screen "idle omp 18.2.11 (bullet plugin row)" empty "$CAPS_STYLED" "$idle_bullet"
   assert_screen "idle omp medium without plugin" empty "$CAPS_STYLED" "$idle_medium"
+  assert_screen "idle omp fractional M context" empty "$CAPS_STYLED" "${idle_medium/1M/1.1M}"
   assert_screen "idle omp quota without plugin" empty "$CAPS_STYLED" "$idle_quota"
   assert_screen "idle omp 18.3.0 right-aligned context" empty "$CAPS_STYLED" "$idle_183"
   assert_screen "idle omp 18.3.0 without plugin" empty "$CAPS_STYLED" "${idle_183%$'\n'*}"
   assert_screen "idle omp compact default with M context" empty "$CAPS_STYLED" "$idle_compact"
+  assert_screen "idle omp compact fractional M context" empty "$CAPS_STYLED" "${idle_compact/1M/1.1M}"
   assert_screen "idle omp compact right-aligned M context" empty "$CAPS_STYLED" "$idle_compact_right"
+  assert_screen "idle omp compact right-aligned fractional M context" empty "$CAPS_STYLED" "${idle_compact_right/1M/1.1M}"
   assert_screen "idle omp compact right-aligned M context with plugin" empty "$CAPS_STYLED" "$idle_compact_right"$'\n○ 🐴 ponytail: ⚡ FULL'
   assert_screen "idle omp compact quota" empty "$CAPS_STYLED" "$idle_compact_quota"
   assert_screen "idle omp compact right-aligned quota" empty "$CAPS_STYLED" "$idle_compact_quota_right"
@@ -561,6 +566,7 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   assert_screen "idle omp thinking off with quota" empty "$CAPS_STYLED" "$idle_off_quota"
   assert_screen "idle omp auto pending with quota" empty "$CAPS_STYLED" "$idle_auto_quota"
   assert_screen "idle omp nerd preset with M context" empty "$CAPS_STYLED" "$idle_nerd_m"
+  assert_screen "idle omp nerd preset with fractional M context" empty "$CAPS_STYLED" "${idle_nerd_m/1M/1.1M}"
   for thinking in '○ min' '◔ low' '◑ med' '◒ high' '◕ xhigh' '◉ max'; do
     wrapped=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · '"$thinking"$' · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
     assert_screen "idle omp 18.2.11 numeric context with $thinking" empty "$CAPS_STYLED" "$wrapped"
@@ -569,6 +575,7 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   done
   wrapped=$'some transcript\n\n❯\n '$'\uEC19'$' model · '$'\uF126'$' detached · '$'\uE70F'$' 36.7%/41K'
   assert_screen "idle omp preset-independent numeric K context" empty "$CAPS_STYLED" "$wrapped"
+  assert_screen "idle omp fractional K context" empty "$CAPS_STYLED" "${wrapped/41K/8.2K}"
   wrapped=$'some transcript\n\n❯\n ⬢ GPT-6-Sol · ◒ high · ⑂ detached ◫ 5.5%/872K ⟲\n○ 🐴 ponytail: ⚡ FULL'
   assert_screen "idle omp high with compact K context" empty "$CAPS_STYLED" "$wrapped"
   assert_screen "idle omp 18.2.11 on a plain capture" empty "$CAPS_PLAIN" "$idle_bullet"
@@ -577,7 +584,7 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # The boundary must not cut a bare composer's own wrapped input.
   wrapped=$'some transcript\n\n❯ please run the suite and then\nfix · tests before pushing'
   assert_screen "wrapped typed text with a middle dot stays pending" pending "$CAPS_TMUX" "$wrapped" 3
-  for continuation in '⬢ fix · tests before pushing' 'review · 9.0%/1M backups' 'review · Action: keep backups · 9.0%/1M notes' 'review · Action: keep backups · 9.0%/1M' '◑ Notes · ⑂ tasks' '● review backups' '○ review backups' '● Action: keep backups' '⬢ Notes · ◉ tasks'; do
+  for continuation in '⬢ fix · tests before pushing' 'review · 9.0%/1M backups' 'review · Action: keep backups · 9.0%/1M notes' 'review · Action: keep backups · 9.0%/1M' 'review · Action: keep backups · 9.0%/1.1M' '◑ Notes · ⑂ tasks' '● review backups' '○ review backups' '● Action: keep backups' '⬢ Notes · ◉ tasks'; do
     wrapped=$'some transcript\n\n❯ please run the suite and then\n'"$continuation"
     assert_screen "wrapped draft $continuation with cursor" pending "$CAPS_TMUX" "$wrapped" 3
     assert_screen "wrapped draft $continuation without cursor" pending "$CAPS_STYLED" "$wrapped"

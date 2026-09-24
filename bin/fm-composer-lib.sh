@@ -504,8 +504,7 @@ FM_COMPOSER_MODE_HINT_RE_DEFAULT='^[[:space:]]*(⏵|⏸)'
 # row needs no rule: it sits ABOVE the prompt behind a blank line, and no
 # bare-composer path ever reads above-rows. The rule is consulted only as the boundary BELOW a bare composer,
 # never on the composer row itself.
-FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/[0-9]+K|[[:space:]]·[[:space:]][^·]+[[:space:]]·[[:space:]][^·]*(◫|)[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+M([[:space:]]*($|⟲|·))|^[[:space:]]*(○|◔|◑|◒|◕|◉)[[:space:]]+[^·]+[[:space:]]·[[:space:]]+⑂[[:space:]]+[^[:space:]·]+[^·]*[[:space:]]+◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+M([[:space:]]*($|⟲|·))'
-FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT='^[[:space:]]*(⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+(○|◔|◑|◒|◕|◉|⦸|⟳)[[:space:]]+[^[:space:]]+|(○|◔|◑|◒|◕|◉)[[:space:]]+[^·]+)[[:space:]]·[[:space:]]+⑂[[:space:]]+[^·]+([[:space:]]·)?[[:space:]]+⏱[[:space:]]+[^·]+[[:space:]]·[[:space:]]+[0-9]+h[[:space:]]+[0-9]+%'
+FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/[0-9]+(\.[0-9])?K|[[:space:]]·[[:space:]][^·]+[[:space:]]·[[:space:]][^·]*(◫|)[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+(\.[0-9])?M([[:space:]]*($|⟲|·))|^[[:space:]]*(○|◔|◑|◒|◕|◉)[[:space:]]+[^·]+[[:space:]]·[[:space:]]+⑂[[:space:]]+[^[:space:]·]+[^·]*[[:space:]]+◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+(\.[0-9])?M([[:space:]]*($|⟲|·))|^[[:space:]]*(⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+(○|◔|◑|◒|◕|◉|⦸|⟳)[[:space:]]+[^[:space:]]+|(○|◔|◑|◒|◕|◉)[[:space:]]+[^·]+)[[:space:]]·[[:space:]]+⑂[[:space:]]+[^·]+([[:space:]]·)?[[:space:]]+⏱[[:space:]]+[^·]+[[:space:]]·[[:space:]]+[0-9]+h[[:space:]]+[0-9]+%'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
 # row, on the `›` row itself after the dim `Ask Codex to do anything`
@@ -1194,8 +1193,7 @@ _fm_composer_classify_bare_row() {  # <screen> <styled> <row>
 # (FM_COMPOSER_OMP_STATUS_RE_DEFAULT above) - composer furniture that sits
 # below a bare composer and must bound its wrap region exactly as an edge does.
 _fm_composer_row_is_omp_status() {  # <trimmed-row>
-  fm_composer_idle_matches "$1" "${FM_COMPOSER_OMP_STATUS_RE:-$FM_COMPOSER_OMP_STATUS_RE_DEFAULT}" sensitive && return 0
-  fm_composer_idle_matches "$1" "$FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT" sensitive
+  fm_composer_idle_matches "$1" "${FM_COMPOSER_OMP_STATUS_RE:-$FM_COMPOSER_OMP_STATUS_RE_DEFAULT}" sensitive
 }
 
 # _fm_composer_row_is_braille_furniture: 0 when the row is non-blank and its
