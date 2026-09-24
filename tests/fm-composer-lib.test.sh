@@ -495,12 +495,16 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # floats above the prompt behind a blank line. Every row below the prompt
   # read as typed text, so an idle omp pane refused doorbells, relaunches,
   # and exits with "composer visibly holds pending text".
-  local idle_circle idle_bullet idle_medium idle_quota idle_183 typed wrapped continuation thinking out
+  local idle_circle idle_bullet idle_medium idle_quota idle_183 idle_compact idle_off idle_auto idle_nerd_m typed wrapped continuation thinking out
   idle_circle=$'some transcript\n                                                   ⚡ 37.1 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/jotzu-mention-display-name-fallback         Add Ide… · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)\n○ 🐴 ponytail: ⚡ FULL'
   idle_bullet=$'some transcript\n                                                   ⚡ 12.4 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
   idle_medium=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◑ med · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
   idle_quota=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◒ high · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)'
   idle_183=$'some transcript\n\n❯\n ⬢ GPT-6-Sol · ◑ med · ⑂ detached                    ◫ 5.5%/872K ⟲\n○ 🐴 ponytail: ⚡ FULL'
+  idle_compact=$'some transcript\n\n❯\n ◑ GLM-5.3-Flash · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
+  idle_off=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ⦸ off · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
+  idle_auto=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ⟳ auto · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
+  idle_nerd_m=$'some transcript\n\n❯\n '$'\uEC19'$' model · '$'\uF126'$' detached · '$'\uE70F'$' 9.0%/1M'
   typed=$'some transcript\n\n❯ fix the flaky test\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
   # Non-vacuousness: each new footer row is real non-blank content that the
   # wrap region would otherwise take as typed input.
@@ -526,6 +530,8 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
     && fail "an icon-led draft with a middle dot must not be mistaken for omp status furniture"
   _fm_composer_row_is_omp_status 'review · 9.0%/1M backups' \
     && fail "a draft with numeric context-like text must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status 'review · Action: keep backups · 9.0%/1M notes' \
+    && fail "a two-cell draft with trailing prose must not be mistaken for omp status furniture"
   _fm_composer_row_is_omp_status '● review backups' \
     && fail "a bullet-led draft must not be mistaken for omp plugin furniture"
   _fm_composer_row_is_omp_status '○ review backups' \
@@ -536,9 +542,16 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   assert_screen "idle omp quota without plugin" empty "$CAPS_STYLED" "$idle_quota"
   assert_screen "idle omp 18.3.0 right-aligned context" empty "$CAPS_STYLED" "$idle_183"
   assert_screen "idle omp 18.3.0 without plugin" empty "$CAPS_STYLED" "${idle_183%$'\n'*}"
+  assert_screen "idle omp compact default with M context" empty "$CAPS_STYLED" "$idle_compact"
+  assert_screen "idle omp compact default on plain capture" empty "$CAPS_PLAIN" "$idle_compact"
+  assert_screen "idle omp thinking off with M context" empty "$CAPS_STYLED" "$idle_off"
+  assert_screen "idle omp auto pending with M context" empty "$CAPS_STYLED" "$idle_auto"
+  assert_screen "idle omp nerd preset with M context" empty "$CAPS_STYLED" "$idle_nerd_m"
   for thinking in '○ min' '◔ low' '◑ med' '◒ high' '◕ xhigh' '◉ max'; do
     wrapped=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · '"$thinking"$' · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
     assert_screen "idle omp 18.2.11 numeric context with $thinking" empty "$CAPS_STYLED" "$wrapped"
+    wrapped=$'some transcript\n\n❯\n '"${thinking%% *}"$' GLM-5.3-Flash · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
+    assert_screen "idle omp compact numeric context with $thinking" empty "$CAPS_STYLED" "$wrapped"
   done
   wrapped=$'some transcript\n\n❯\n '$'\uEC19'$' model · '$'\uF126'$' detached · '$'\uE70F'$' 36.7%/41K'
   assert_screen "idle omp preset-independent numeric K context" empty "$CAPS_STYLED" "$wrapped"
@@ -550,7 +563,7 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # The boundary must not cut a bare composer's own wrapped input.
   wrapped=$'some transcript\n\n❯ please run the suite and then\nfix · tests before pushing'
   assert_screen "wrapped typed text with a middle dot stays pending" pending "$CAPS_TMUX" "$wrapped" 3
-  for continuation in '⬢ fix · tests before pushing' 'review · 9.0%/1M backups' '● review backups' '○ review backups' '● Action: keep backups' '⬢ Notes · ◉ tasks'; do
+  for continuation in '⬢ fix · tests before pushing' 'review · 9.0%/1M backups' 'review · Action: keep backups · 9.0%/1M notes' '◑ Notes · ⑂ tasks' '● review backups' '○ review backups' '● Action: keep backups' '⬢ Notes · ◉ tasks'; do
     wrapped=$'some transcript\n\n❯ please run the suite and then\n'"$continuation"
     assert_screen "wrapped draft $continuation with cursor" pending "$CAPS_TMUX" "$wrapped" 3
     assert_screen "wrapped draft $continuation without cursor" pending "$CAPS_STYLED" "$wrapped"

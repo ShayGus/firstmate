@@ -500,11 +500,11 @@ FM_COMPOSER_MODE_HINT_RE_DEFAULT='^[[:space:]]*(⏵|⏸)'
 # preset's `pi` is deliberately absent because that preset's `sep.dot` is
 # ` - `, so its status row never carries a middle dot and a `pi ·` alternative
 # could only ever match typed text), when it opens with one of omp's spinner
-# frames then an elapsed cell, or when it carries a separated numeric K context cell. The right-aligned `⚡ <n> tok/s`
+# frames then an elapsed cell, or when it carries a separated numeric context cell. The right-aligned `⚡ <n> tok/s`
 # row needs no rule: it sits ABOVE the prompt behind a blank line, and no
 # bare-composer path ever reads above-rows. The rule is consulted only as the boundary BELOW a bare composer,
 # never on the composer row itself.
-FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/[0-9]+K'
+FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/[0-9]+K|[[:space:]]·[[:space:]][^·]+[[:space:]]·[[:space:]][^·]*[0-9]+(\.[0-9]+)?%/[0-9]+M([[:space:]]*($|⟲|·))'
 FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT='^[[:space:]]*⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+(○|◔|◑|◒|◕|◉)[[:space:]]+[^[:space:]]+[[:space:]]+·[[:space:]]+⑂[[:space:]]+[^·]+([[:space:]]·[[:space:]]+(◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+[KM]|⏱[[:space:]]+[^·]+[[:space:]]·[[:space:]]+[0-9]+h[[:space:]]+[0-9]+%)|[[:space:]]{2,}◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+[KM])'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
