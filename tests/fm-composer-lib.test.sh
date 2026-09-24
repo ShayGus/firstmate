@@ -612,6 +612,20 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
     || fail "status-prefix draft and plugin-looking continuation must remain extracted, got '$out'"
   wrapped=$'some transcript\n\n❯\n⬢ GPT-6-Sol · ◑ med · ⑂ detached\n● Action: keep backups'
   assert_screen "18.3.0 status-prefix draft without context" pending "$CAPS_STYLED" "$wrapped"
+  # omp 18.3.0 live in a 92-column pane: the context cell is truncated away and
+  # the quota cell carries only a 7d window (or no plan label).
+  wrapped=$'some transcript\n\n❯\n ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer              ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h\n○ 🐴 ponytail: ⚡ FULL'
+  assert_screen "idle omp 18.3.0 quota with only a 7d window" empty "$CAPS_STYLED" "$wrapped"
+  wrapped=$'some transcript\n\n❯\n ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer        ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h)\n○ 🐴 ponytail: ⚡ FULL'
+  assert_screen "idle omp 18.3.0 quota without a plan label" empty "$CAPS_STYLED" "$wrapped"
+  # Multi-line drafts (live, shift+enter) whose lines mimic footer rows sit
+  # ABOVE omp's real footer; only the bottom-most status row is furniture.
+  local footer=$'\n ◔ Opus 5 · ⑂ fm/omp-footer                 ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲\n○ 🐴 ponytail: ⚡ FULL'
+  for continuation in '  fix · tests · ◫ 9.0%/1M ⟲' '  fix · tests · ◫ 9.0%/272K ⟲' $'  ◑ GLM-5.3-Flash · ⑂ fm/branch · ◫ 9.0%/1.1M ⟲\n  ○ 🐴 ponytail: ⚡ FULL' $'  ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)\n  ● Action: keep backups'; do
+    wrapped=$'some transcript\n\n❯\n'"$continuation$footer"
+    assert_screen "multi-line draft $continuation above the footer without cursor" pending "$CAPS_STYLED" "$wrapped"
+    assert_screen "multi-line draft $continuation above the footer with cursor" pending "$CAPS_TMUX" "$wrapped" 3
+  done
   pass "matrix: omp 18.2.11 footer rows bound the bare composer's wrap region"
 }
 
