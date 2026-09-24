@@ -1,0 +1,28 @@
+
+╭─── omp v18.3.0 ──────────────────────────────────────────────────────────────╮
+│                          │ Tips                                              │
+│      Welcome back!       │ # for prompt actions                              │
+│                          │ / for commands                                    │
+│       ████████████       │ ! to run bash                                     │
+│          ██  ██          │ $ to run python                                   │
+│          ██  ██          │ ───────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                       │
+│              ██          │ No LSP servers                                    │
+│                          │                                                   │
+│        GPT-6-Sol         │                                                   │
+│       openai-codex       │                                                   │
+│                          │ ───────────────────────────────────────────────── │
+│                          │ Recent sessions                                   │
+│                          │ No recent sessions                                │
+│                          │                                                   │
+│                          │                                                   │
+│                          │                                                   │
+│                          │                                                   │
+╰──────────────────────────┴───────────────────────────────────────────────────╯
+ Tip: Spaghetti code? Try complaining with /omfg
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+ ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+○ 🐴 ponytail: ⚡ FULL

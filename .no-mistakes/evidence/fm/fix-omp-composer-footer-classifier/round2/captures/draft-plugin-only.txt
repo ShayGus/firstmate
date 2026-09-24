@@ -1,0 +1,29 @@
+
+╭─── omp v18.3.0 ─────────────────────────────────────────────────────────────────────────╮
+│                          │ Tips                                                         │
+│      Welcome back!       │ # for prompt actions                                         │
+│                          │ / for commands                                               │
+│       ████████████       │ ! to run bash                                                │
+│          ██  ██          │ $ to run python                                              │
+│          ██  ██          │ ──────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                  │
+│              ██          │ No LSP servers                                               │
+│                          │                                                              │
+│      Claude Opus 5       │                                                              │
+│        anthropic         │                                                              │
+│                          │ ──────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                              │
+│                          │ No recent sessions                                           │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+╰──────────────────────────┴──────────────────────────────────────────────────────────────╯
+ Tip: Tired of typing "keep going"? Just send a '.'
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+  ○ 🐴 ponytail: ⚡ FULL
+ ◔ Opus 5 · ⑂ fm/omp-footer                ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+○ 🐴 ponytail: ⚡ FULL

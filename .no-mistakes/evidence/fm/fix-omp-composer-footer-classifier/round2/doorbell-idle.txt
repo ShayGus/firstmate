@@ -1,0 +1,4 @@
+## Doorbell to idle narrowed omp pane E (w1:p6)
+pre-ring footer:  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+pre-ring composer_state head=empty
+ring_rc=0

@@ -1,0 +1,7 @@
+A w1:p2 state=empty | ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer                                  ⏱ 5h 32% (3h 55m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+B w1:p3 state=empty | ◔ Opus 5 · ⑂ fm/omp-footer                                           ⏱ 5h 32% (3h 55m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+C w1:p4 state=empty | π · ◕ GPT-6-Luna · 🗑 fm-omp-lab-proj2 · ⑂ fm/omp-footer · ◫ 3.0%/872K ⟲ · (sub)
+D w1:p5 state=empty | π · ⦸ Opus 5 · 🗑 fm-omp-lab-proj2 · ⑂ fm/omp-footer · ◫ 3.9%/1M ⟲ · (sub)
+E w1:p6 state=empty | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                         ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+F w1:p7 state=empty | ◑ GPT-6-Luna · ⑂ fm/omp-footer                                ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+G w1:p8 state=empty | ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer                                 ⏱ 5h 32% (3h 55m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲

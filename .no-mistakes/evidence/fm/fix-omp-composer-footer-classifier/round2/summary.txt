@@ -1,0 +1,83 @@
+# Round 2 live validation at 49a679c: omp 18.3.0 in Herdr 0.9.1 lab fm-lab-omp-footer3-4048169-8739 (torn down)
+# omp launched in Firstmate worker posture (.omp/fm-worker-overlay.yml, --auto-approve, worker env markers), ponytail plugin loaded.
+# Verdicts are read through the real fm_backend_herdr_composer_state; "base" is the same live read through d4f3b78's bin/.
+
+## Idle composers (expected empty)
+A w1:p2 base=pending head=empty
+B w1:p3 base=pending head=empty
+C w1:p4 base=empty head=empty
+D w1:p5 base=empty head=empty
+E w1:p6 base=empty head=empty
+F w1:p7 base=empty head=empty
+G w1:p8 base=pending head=empty
+E-narrow-7d head=empty base=pending |  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+wider: head=empty |  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+G[37] head=pending base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer
+G[37] head=pending base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer
+G[37] head=pending base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)
+
+## Post-turn (tok/s row above prompt)
+post-turn head=pending base=pending
+t=10s agent=idle head=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+t=20s agent=idle head=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+t=30s agent=idle head=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+t=40s agent=idle head=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+t=50s agent=idle head=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+t=60s agent=idle head=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+wide[81] head=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+full-width[92] head=empty base=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   Process… · ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+headless[92] head=empty base=pending | ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   Process… · ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+
+## Adversarial drafts (expected pending)
+ctx-1M         w1:p2 head=pending  base=pending
+ctx-272K       w1:p3 head=pending  base=empty
+compact-1.1M   w1:p4 head=pending  base=pending
+quota-5h       w1:p5 head=pending  base=pending
+quota-7d       w1:p7 head=pending  base=pending
+paired-bare    w1:p2 head=pending  base=pending
+plugin-only    w1:p3 head=pending  base=pending
+tok-s          w1:p4 head=pending  base=pending
+wrapped-quota  w1:p5 head=pending  base=pending
+single-line    w1:p7 head=pending  base=pending
+
+## Doorbells (fm_task_inbox_ring)
+## Doorbell to idle narrowed omp pane E (w1:p6)
+pre-ring footer:  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+pre-ring composer_state head=empty
+ring_rc=0
+## Second doorbell to pane E after a turn (tok/s row above the prompt)
+  |                                                                                 ⚡ 13.4 tok/s
+  | ❯
+  |  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   Process… · ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+  | ○ 🐴 ponytail: ⚡ FULL
+composer_state head=empty
+ring_rc=0
+
+## Doorbell to pane F (w1:p7) holding a multi-line draft with a footer-shaped line
+  before | ❯
+  before |   ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h)
+  before |  ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 15% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+  before | ○ 🐴 ponytail: ⚡ FULL
+composer_state head=pending
+ring_rc=1
+  after  | ❯
+  after  |   ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h)
+  after  |  ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 15% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+  after  | ○ 🐴 ponytail: ⚡ FULL
+inbox F: 0001.msg
+handled
+0001.msg
+0002.msg
+## base d4f3b78 doorbell to idle pane A (w1:p2)
+  | ❯
+  |  ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer       ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+  | ○ 🐴 ponytail: ⚡ FULL
+ring_rc=1
+composer after base ring:
+  | ❯
+  |  ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer       ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+  | ○ 🐴 ponytail: ⚡ FULL

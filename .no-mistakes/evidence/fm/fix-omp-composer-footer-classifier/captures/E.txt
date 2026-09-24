@@ -1,0 +1,25 @@
+│          ██  ██          │ $ to run python                                              │
+│          ██  ██          │ ──────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                  │
+│              ██          │ No LSP servers                                               │
+│                          │                                                              │
+│        GPT-6-Sol         │                                                              │
+│       openai-codex       │                                                              │
+│                          │ ──────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                              │
+│                          │ No recent sessions                                           │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+╰──────────────────────────┴──────────────────────────────────────────────────────────────╯
+ Tip: Bulk data to classify or triage? Say `jevify` in your message — the eval kernel's
+      `judge()` processes the batch and you read only what it flags — watch it glow as you
+      type
+
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+ ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer              ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+○ 🐴 ponytail: ⚡ FULL

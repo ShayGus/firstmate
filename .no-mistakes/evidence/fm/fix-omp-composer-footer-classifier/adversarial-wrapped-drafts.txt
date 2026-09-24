@@ -1,0 +1,10 @@
+=== w2:p2 state=pending
+❯ word word word word word word word word word word word word word word word word word abcdef
+  ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)
+ ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer        ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+○ 🐴 ponytail: ⚡ FULL
+=== w2:p7 state=pending
+❯ word word word word word word word word word word word word word word word word word abcdef
+  ◑ GLM-5.3-Flash · ⑂ fm/branch · ◫ 9.0%/1.1M ⟲
+ ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+○ 🐴 ponytail: ⚡ FULL

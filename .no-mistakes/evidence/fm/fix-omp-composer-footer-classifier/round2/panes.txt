@@ -1,0 +1,7 @@
+A w1:p2
+B w1:p3
+C w1:p4
+D w1:p5
+E w1:p6
+F w1:p7
+G w1:p8

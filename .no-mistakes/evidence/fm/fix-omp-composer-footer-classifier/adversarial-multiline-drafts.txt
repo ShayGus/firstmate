@@ -1,0 +1,30 @@
+=== w2:p7 draft '
+probe' state=pending
+=== w2:p7 state=empty
+
+❯
+  ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)
+  ● Action: keep backups
+ ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+○ 🐴 ponytail: ⚡ FULL
+=== w2:p2 state=empty
+
+❯
+  ◑ GLM-5.3-Flash · ⑂ fm/branch · ◫ 9.0%/1.1M ⟲
+  ○ 🐴 ponytail: ⚡ FULL
+ ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer        ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+○ 🐴 ponytail: ⚡ FULL
+=== w2:p3 state=pending
+
+❯
+  ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch
+  ● Action: keep backups
+ ◔ Opus 5 · ⑂ fm/omp-footer                 ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+○ 🐴 ponytail: ⚡ FULL
+=== w2:p4 state=empty
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+  fix · tests · ◫ 9.0%/1M ⟲
+ π · ◕ GPT-6-Luna · 🗑 fm-omp-lab-proj · ⑂ fm/omp-footer · ◫ 3.0%/872K ⟲ · (sub)
+○ 🐴 ponytail: ⚡ FULL

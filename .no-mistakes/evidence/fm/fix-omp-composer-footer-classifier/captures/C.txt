@@ -1,0 +1,25 @@
+│       ████████████       │ ! to run bash                                                │
+│          ██  ██          │ $ to run python                                              │
+│          ██  ██          │ ──────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                  │
+│              ██          │ No LSP servers                                               │
+│                          │                                                              │
+│        GPT-6-Luna        │                                                              │
+│       openai-codex       │                                                              │
+│                          │ ──────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                              │
+│                          │ No recent sessions                                           │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+╰──────────────────────────┴──────────────────────────────────────────────────────────────╯
+ Tip: Hit a Codex rate limit? `/usage reset` spends a saved reset credit to immediately
+      restore your quota
+
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+ π · ◕ GPT-6-Luna · 🗑 fm-omp-lab-proj · ⑂ fm/omp-footer · ◫ 3.0%/872K ⟲ · (sub)
+○ 🐴 ponytail: ⚡ FULL

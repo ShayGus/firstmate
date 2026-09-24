@@ -1,0 +1,37 @@
+│                          │                                                   │
+╰──────────────────────────┴───────────────────────────────────────────────────╯
+ Tip: Spaghetti code? Try complaining with /omfg
+
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+
+ : Firstmate instruction waiting: list '/tmp/fm-omp-lab-state/omp-e.inbox'/*.msg
+ and, in numeric order, read and act on each, then mv each handled file to
+ '/tmp/fm-omp-lab-state/omp-e.inbox'/handled/.
+
+
+ Inspecting the directory
+
+ • Read (2)
+╭─── • Read /tmp/fm-omp-lab-state/omp-e.inbox ───────────────────────────────────╮
+│ .                                                                              │
+│   - 0001.msg  119B      just now                                               │
+│   - handled/            just now                                               │
+╰────────────────────────────────────────────────────────────────────────────────╯
+╭─── • Read /tmp/fm-omp-lab-state/omp-e.inbox/0001.msg ──────────────────────────╮
+│  1 Doorbell live test: reply in chat with exactly DOORBELL-ACK-E and do        │
+│ nothing else except moving this file to handled/.                              │
+╰────────────────────────────────────────────────────────────────────────────────╯
+
+ Preparing the file move
+
+➜ Move: 🗒 /tmp/fm-omp-lab….inbox/0001.msg → /tmp/fm-omp-lab…andled/0001.msg
+
+ DOORBELL-ACK-E
+
+                                                                     ⚡ 13.4 tok/s
+
+❯
+ ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer                                   Process…
+○ 🐴 ponytail: ⚡ FULL

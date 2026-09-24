@@ -1,0 +1,25 @@
+│                          │ / for commands                                               │
+│       ████████████       │ ! to run bash                                                │
+│          ██  ██          │ $ to run python                                              │
+│          ██  ██          │ ──────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                  │
+│              ██          │ No LSP servers                                               │
+│                          │                                                              │
+│        GPT-6-Luna        │                                                              │
+│       openai-codex       │                                                              │
+│                          │ ──────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                              │
+│                          │ No recent sessions                                           │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+╰──────────────────────────┴──────────────────────────────────────────────────────────────╯
+ Tip: Try task isolation to create CoW worktrees
+
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+ ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+○ 🐴 ponytail: ⚡ FULL

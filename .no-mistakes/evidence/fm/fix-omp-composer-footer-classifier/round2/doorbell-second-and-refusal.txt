@@ -1,0 +1,23 @@
+## Second doorbell to pane E after a turn (tok/s row above the prompt)
+  |                                                                                 ⚡ 13.4 tok/s
+  | ❯
+  |  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   Process… · ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+  | ○ 🐴 ponytail: ⚡ FULL
+composer_state head=empty
+ring_rc=0
+
+## Doorbell to pane F (w1:p7) holding a multi-line draft with a footer-shaped line
+  before | ❯
+  before |   ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h)
+  before |  ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 15% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+  before | ○ 🐴 ponytail: ⚡ FULL
+composer_state head=pending
+ring_rc=1
+  after  | ❯
+  after  |   ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h)
+  after  |  ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 15% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+  after  | ○ 🐴 ponytail: ⚡ FULL
+inbox F: 0001.msg
+handled
+0001.msg
+0002.msg

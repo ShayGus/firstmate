@@ -1,0 +1,9 @@
+E-narrow-7d head=empty base=pending |  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+wider: head=empty |  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+G[37] head=pending base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer
+G[37] head=pending base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer
+G[37] head=pending base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)
+G[81] head=empty base=pending |  ⬢ Opus 5.5 · ◑ med · ⑂ fm/omp-footer         ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h)

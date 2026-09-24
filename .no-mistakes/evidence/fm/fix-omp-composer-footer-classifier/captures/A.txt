@@ -1,0 +1,25 @@
+│       ████████████       │ ! to run bash                                                │
+│          ██  ██          │ $ to run python                                              │
+│          ██  ██          │ ──────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                  │
+│              ██          │ No LSP servers                                               │
+│                          │                                                              │
+│      Claude Opus 5       │                                                              │
+│        anthropic         │                                                              │
+│                          │ ──────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                              │
+│                          │ No recent sessions                                           │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+╰──────────────────────────┴──────────────────────────────────────────────────────────────╯
+ Tip: `/copy code` grabs the last code block to your clipboard — `/copy cmd` grabs the last
+      shell/python command
+
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+ ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer        ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+○ 🐴 ponytail: ⚡ FULL

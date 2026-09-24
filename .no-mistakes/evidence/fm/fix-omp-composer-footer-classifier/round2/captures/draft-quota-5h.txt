@@ -1,0 +1,31 @@
+
+╭─── omp v18.3.0 ─────────────────────────────────────────────────────────────────────────╮
+│                          │ Tips                                                         │
+│      Welcome back!       │ # for prompt actions                                         │
+│                          │ / for commands                                               │
+│       ████████████       │ ! to run bash                                                │
+│          ██  ██          │ $ to run python                                              │
+│          ██  ██          │ ──────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                  │
+│              ██          │ No LSP servers                                               │
+│                          │                                                              │
+│      Claude Opus 5       │                                                              │
+│        anthropic         │                                                              │
+│                          │ ──────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                              │
+│                          │ No recent sessions                                           │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+│                          │                                                              │
+╰──────────────────────────┴──────────────────────────────────────────────────────────────╯
+ Tip: Press alt+p (or /switch) to switch provider, and ctrl+p to cycle role models smol ->
+      slow -> etc
+
+ Connected to MCP servers: clerk, cloudflare-api, Jotzu.
+
+❯
+  ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)
+  ● Action: keep backups
+ π · ⦸ Opus 5 · 🗑 fm-omp-lab-proj2 · ⑂ fm/omp-footer · ◫ 3.9%/1M ⟲ · (sub)
+○ 🐴 ponytail: ⚡ FULL

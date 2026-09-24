@@ -1,0 +1,19 @@
+# Live omp 18.3.0 composer verdicts via fm_backend_herdr_composer_state (Herdr 0.9.1 lab fm-lab-omp-footer-3880417-28229, 92-col pane, Firstmate worker overlay, ponytail plugin loaded)
+## Idle panes (expected: empty). HEAD verdict | base d4f3b78 verdict on the same capture
+A HEAD=empty base=pending |  ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer        ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+B HEAD=empty base=pending |  ◔ Opus 5 · ⑂ fm/omp-footer                 ⏱ 5h 23% (4h 4m) · 7d 57% (1d 17h) · ◫ 3.9%/1M ⟲
+C HEAD=empty base=empty |  π · ◕ GPT-6-Luna · 🗑 fm-omp-lab-proj · ⑂ fm/omp-footer · ◫ 3.0%/872K ⟲ · (sub)
+D HEAD=empty base=empty |  π · ⦸ Opus 5 · 🗑 fm-omp-lab-proj · ⑂ fm/omp-footer · ◫ 3.9%/1M ⟲ · (sub)
+E HEAD=pending base=pending |  ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer              ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+F HEAD=empty base=empty |  ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+
+## Drafts with visible typed text (expected: pending)
+draft-p7 HEAD       empty
+draft-p7 base       pending
+draft-p2 HEAD       empty
+draft-p2 base       pending
+draft-p3 HEAD       pending
+draft-p3 base       pending
+draft-p4 HEAD       empty
+draft-p4 base       pending
+draft-p4-K HEAD=empty base=empty (pre-existing K-arm hole)

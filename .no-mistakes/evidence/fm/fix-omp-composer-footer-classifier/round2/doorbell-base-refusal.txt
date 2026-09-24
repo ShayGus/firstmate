@@ -1,0 +1,9 @@
+## base d4f3b78 doorbell to idle pane A (w1:p2)
+  | ❯
+  |  ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer       ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+  | ○ 🐴 ponytail: ⚡ FULL
+ring_rc=1
+composer after base ring:
+  | ❯
+  |  ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer       ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+  | ○ 🐴 ponytail: ⚡ FULL

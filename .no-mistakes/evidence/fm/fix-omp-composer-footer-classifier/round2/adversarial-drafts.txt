@@ -1,0 +1,72 @@
+ctx-1M         w1:p2 head=pending  base=pending
+    screen tail:
+    | ❯
+    |   fix · tests · ◫ 9.0%/1M ⟲
+    |  ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer       ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+ctx-272K       w1:p3 head=pending  base=empty
+    screen tail:
+    | ❯
+    |   fix · tests · ◫ 9.0%/272K ⟲
+    |  ◔ Opus 5 · ⑂ fm/omp-footer                ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+compact-1.1M   w1:p4 head=pending  base=pending
+    screen tail:
+    | ❯
+    |   ◑ GLM-5.3-Flash · ⑂ fm/branch · ◫ 9.0%/1.1M ⟲
+    |   ○ 🐴 ponytail: ⚡ FULL
+    |  π · ◕ GPT-6-Luna · 🗑 fm-omp-lab-proj2 · ⑂ fm/omp-footer · ◫ 3.0%/872K ⟲ · (sub)
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+quota-5h       w1:p5 head=pending  base=pending
+    screen tail:
+    | ❯
+    |   ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)
+    |   ● Action: keep backups
+    |  π · ⦸ Opus 5 · 🗑 fm-omp-lab-proj2 · ⑂ fm/omp-footer · ◫ 3.9%/1M ⟲ · (sub)
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+quota-7d       w1:p7 head=pending  base=pending
+    screen tail:
+    | ❯
+    |   ⬢ GPT-6-Sol · ◑ med · ⑂ fm/omp-footer   ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h
+    |  ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+paired-bare    w1:p2 head=pending  base=pending
+    screen tail:
+    | ❯
+    |   ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch
+    |   ● Action: keep backups
+    |  ⬢ Opus 5 · ◒ high · ⑂ fm/omp-footer       ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+plugin-only    w1:p3 head=pending  base=pending
+    screen tail:
+    | ❯
+    |   ○ 🐴 ponytail: ⚡ FULL
+    |  ◔ Opus 5 · ⑂ fm/omp-footer                ⏱ 5h 39% (3h 49m) · 7d 58% (1d 17h) · ◫ 3.9%/1M ⟲
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+tok-s          w1:p4 head=pending  base=pending
+    screen tail:
+    | ❯
+    |   ⚡ 42 tok/s
+    |  π · ◕ GPT-6-Luna · 🗑 fm-omp-lab-proj2 · ⑂ fm/omp-footer · ◫ 3.0%/872K ⟲ · (sub)
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+wrapped-quota  w1:p5 head=pending  base=pending
+    screen tail:
+    |   abcdefgh
+    |   ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)
+    |  π · ⦸ Opus 5 · 🗑 fm-omp-lab-proj2 · ⑂ fm/omp-footer · ◫ 3.9%/1M ⟲ · (sub)
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty
+single-line    w1:p7 head=pending  base=pending
+    screen tail:
+    | ❯ please rerun the tests
+    |  ◑ GPT-6-Luna · ⑂ fm/omp-footer     ⏱ pro · 7d 14% (4d 19h) · ✦ 3 exp 9d 11h · ◫ 3.0%/872K ⟲
+    | ○ 🐴 ponytail: ⚡ FULL
+    after clear: head=empty

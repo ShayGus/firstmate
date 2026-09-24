@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -u
+args=("$@"); last=$((${#args[@]} - 1)); flag=$((last - 1))
+if [ "${#args[@]}" -ge 2 ] && [ "${args[$flag]}" = --session ] && [ "${args[$last]}" = "$HERDR_LAB_SESSION" ]; then unset "args[$last]" "args[$flag]"; fi
+set -- "${args[@]}"
+exec env PATH="$HERDR_ORIGINAL_PATH" "$HERDR_LAB_HELPER" run "$HERDR_LAB_SESSION" "$@"

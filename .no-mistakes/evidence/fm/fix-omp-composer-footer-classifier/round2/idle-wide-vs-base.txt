@@ -1,0 +1,7 @@
+A w1:p2 base=pending head=empty
+B w1:p3 base=pending head=empty
+C w1:p4 base=empty head=empty
+D w1:p5 base=empty head=empty
+E w1:p6 base=empty head=empty
+F w1:p7 base=empty head=empty
+G w1:p8 base=pending head=empty
