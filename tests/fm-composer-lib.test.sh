@@ -495,22 +495,22 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # floats above the prompt behind a blank line. Every row below the prompt
   # read as typed text, so an idle omp pane refused doorbells, relaunches,
   # and exits with "composer visibly holds pending text".
-  local idle_circle idle_bullet typed wrapped
+  local idle_circle idle_bullet typed wrapped continuation out
   idle_circle=$'some transcript\n                                                   ⚡ 37.1 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/jotzu-mention-display-name-fallback         Add Ide… · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)\n○ 🐴 ponytail: ⚡ FULL'
   idle_bullet=$'some transcript\n                                                   ⚡ 12.4 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
   typed=$'some transcript\n\n❯ fix the flaky test\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
   # Non-vacuousness: each new footer row is real non-blank content that the
   # wrap region would otherwise take as typed input.
-  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch' \
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch' '○ 🐴 ponytail: ⚡ FULL' \
     || fail "the 18.2.11 omp status row must be recognized as furniture"
-  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲' \
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲' '● 🐴 ponytail: ⚡ FULL' \
     || fail "the 18.2.11 omp %/M context cell must be recognized as furniture"
-  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◫ 9.0%/1M ⟲' \
-    || fail "a numeric %/M context cell must identify an omp status row"
-  _fm_composer_row_is_omp_status '○ 🐴 ponytail: ⚡ FULL' \
-    || fail "the idle plugin row must be recognized as furniture"
-  _fm_composer_row_is_omp_status '● 🐴 ponytail: ⚡ FULL' \
-    || fail "the variant plugin row must be recognized as furniture"
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch' \
+    && fail "an unpaired status-shaped draft must not be mistaken for omp furniture"
+  _fm_composer_row_is_omp_status '● Action: keep backups' \
+    && fail "a plugin-shaped draft must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status '⬢ Notes · ◉ tasks' '● Action: keep backups' \
+    && fail "a paired draft without the observed status shape must not be mistaken for omp furniture"
   _fm_composer_row_is_omp_status 'fix the flaky test' \
     && fail "ordinary typed text must not be mistaken for omp status furniture"
   _fm_composer_row_is_omp_status 'fix · tests before pushing' \
@@ -533,15 +533,26 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # The boundary must not cut a bare composer's own wrapped input.
   wrapped=$'some transcript\n\n❯ please run the suite and then\nfix · tests before pushing'
   assert_screen "wrapped typed text with a middle dot stays pending" pending "$CAPS_TMUX" "$wrapped" 3
-  local continuation out
-  for continuation in '⬢ fix · tests before pushing' 'review · 9.0%/1M backups' '● review backups' '○ review backups'; do
+  for continuation in '⬢ fix · tests before pushing' 'review · 9.0%/1M backups' '● review backups' '○ review backups' '● Action: keep backups' '⬢ Notes · ◉ tasks'; do
     wrapped=$'some transcript\n\n❯ please run the suite and then\n'"$continuation"
     assert_screen "wrapped draft $continuation with cursor" pending "$CAPS_TMUX" "$wrapped" 3
     assert_screen "wrapped draft $continuation without cursor" pending "$CAPS_STYLED" "$wrapped"
     out=$(fm_composer_extract_selected_content "$CAPS_STYLED" "$wrapped")
     [ "$out" = "please run the suite and then $continuation" ] \
       || fail "wrapped draft $continuation must remain in selected content, got '$out'"
+    wrapped=$'some transcript\n\n❯\n'"$continuation"
+    assert_screen "empty glyph with draft $continuation and cursor" pending "$CAPS_TMUX" "$wrapped" 3
+    assert_screen "empty glyph with draft $continuation without cursor" pending "$CAPS_STYLED" "$wrapped"
+    out=$(fm_composer_extract_selected_content "$CAPS_STYLED" "$wrapped")
+    [ "$out" = "$continuation" ] \
+      || fail "empty glyph must retain draft $continuation, got '$out'"
   done
+  wrapped=$'some transcript\n\n❯\n⬢ Notes · ◉ tasks\n● Action: keep backups'
+  assert_screen "paired footer-looking draft with cursor" pending "$CAPS_TMUX" "$wrapped" 4
+  assert_screen "paired footer-looking draft without cursor" pending "$CAPS_STYLED" "$wrapped"
+  out=$(fm_composer_extract_selected_content "$CAPS_STYLED" "$wrapped")
+  [ "$out" = '⬢ Notes · ◉ tasks ● Action: keep backups' ] \
+    || fail "paired footer-looking draft must remain extracted, got '$out'"
   pass "matrix: omp 18.2.11 footer rows bound the bare composer's wrap region"
 }
 
