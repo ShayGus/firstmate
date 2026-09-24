@@ -1,0 +1,25 @@
+OMP_PID 3125849
+SEND {"id": "arm1", "type": "prompt", "message": "/fm-watch-arm-omp"}
+RPC {"type": "extension_ui_request", "id": "158c37ab3f5f6b20", "method": "setWidget", "widgetKey": "autoresearch"}
+RPC {"type": "extension_ui_request", "id": "158c37ab6a5f6b21", "method": "notify", "message": "watcher: unchanged - omp extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy", "notifyType": "info"}
+RPC {"id": "arm1", "type": "response", "command": "prompt", "success": true}
+ARM_1 {'id': 'arm1', 'type': 'response', 'command': 'prompt', 'success': True}
+WATCHER_1 3126226
+SEND {"id": "arm2", "type": "prompt", "message": "/fm-watch-arm-omp"}
+RPC {"type": "extension_ui_request", "id": "158c37ac339f6b22", "method": "notify", "message": "watcher: unchanged - omp extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy", "notifyType": "info"}
+RPC {"id": "arm2", "type": "response", "command": "prompt", "success": true}
+REPEAT {'id': 'arm2', 'type': 'response', 'command': 'prompt', 'success': True}
+WATCHER_AFTER_REPEAT 3126226
+SEND {"id": "new", "type": "new_session"}
+RPC {"type": "extension_ui_request", "id": "158c37ac3cdf6b23", "method": "setWidget", "widgetKey": "autoresearch"}
+RPC {"id": "new", "type": "response", "command": "new_session", "success": true, "data": {"cancelled": false}}
+NEW_SESSION {'id': 'new', 'type': 'response', 'command': 'new_session', 'success': True, 'data': {'cancelled': False}}
+WATCHER_2 3126226
+SEND {"id": "arm3", "type": "prompt", "message": "/fm-watch-arm-omp"}
+RPC {"type": "extension_ui_request", "id": "158c37c4cd5f6b24", "method": "notify", "message": "watcher: unchanged - omp extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy", "notifyType": "info"}
+RPC {"id": "arm3", "type": "response", "command": "prompt", "success": true}
+ARM_AFTER_REPLACEMENT {'id': 'arm3', 'type': 'response', 'command': 'prompt', 'success': True}
+WATCHER_FINAL 3126226
+CYCLE_LOG <none>
+RESULT {"initial_live": true, "repeat_same": null, "replacement_new": false, "final_same_as_replacement": true}
+STDERR 

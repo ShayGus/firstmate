@@ -1,0 +1,21 @@
+INITIAL_WATCHER 3332892
+SEND {'id': 'before', 'type': 'prompt', 'message': '/fm-watch-arm-omp'}
+NOTIFY watcher: unchanged - omp extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy
+RESPONSE {'id': 'before', 'type': 'response', 'command': 'prompt', 'success': True}
+SEND {'id': 'shutdown', 'type': 'prompt', 'message': '/fm-probe-stale-shutdown'}
+RESPONSE {'id': 'shutdown', 'type': 'response', 'command': 'prompt', 'success': True}
+SEND {'id': 'repair', 'type': 'prompt', 'message': '/fm-watch-arm-omp'}
+NOTIFY probe: shutdown callback completed while OMP remains responsive
+NOTIFY watcher: started omp extension arm child 1; future ordinary re-arms are automatic; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy
+RESPONSE {'id': 'repair', 'type': 'response', 'command': 'prompt', 'success': True}
+RECOVERED_WATCHER 3333221
+SEND {'id': 'repeat', 'type': 'prompt', 'message': '/fm-watch-arm-omp'}
+NOTIFY watcher: unchanged - omp extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy
+RESPONSE {'id': 'repeat', 'type': 'response', 'command': 'prompt', 'success': True}
+SEND {'id': 'turn', 'type': 'prompt', 'message': 'Reply READY only. Do not use tools.'}
+RESPONSE {'id': 'turn', 'type': 'response', 'command': 'prompt', 'success': True}
+FIRST_TURN_ENDED
+WAKE  signal: /home/shayg/.no-mistakes/worktrees/f4bb769f35f8/01M39SN9QN3S0CB0PZFV7QPWJD/.omp-watch-probe-owre3l5j/project/state/omp-e2e.status
+
+Run bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned.
+RESULT {"omp_responsive": true, "watcher_replaced": true, "repeat_preserved": true, "report_delivered": true}

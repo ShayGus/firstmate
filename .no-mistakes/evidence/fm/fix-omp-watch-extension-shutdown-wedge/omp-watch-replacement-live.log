@@ -1,0 +1,7 @@
+BEFORE {"watcher": "3181532", "events": ["session_start"]}
+RPC {"id": "replace", "type": "response", "command": "new_session", "success": true, "data": {"cancelled": false}}
+AFTER {"watcher": "3181532", "events": ["session_start"]}
+RPC {"type": "extension_ui_request", "id": "158c38cda39bf307", "method": "notify", "message": "watcher: unchanged - omp extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy", "notifyType": "info"}
+RPC {"id": "arm", "type": "response", "command": "prompt", "success": true}
+FINAL {"watcher": "3181532", "events": ["session_start"], "replacement_watcher": false}
+STDERR 

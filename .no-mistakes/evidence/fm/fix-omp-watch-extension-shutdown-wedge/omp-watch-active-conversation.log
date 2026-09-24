@@ -1,0 +1,14 @@
+SEND {"id": "first", "type": "prompt", "message": "Reply READY only. Do not use tools."}
+EVENT {"id": "first", "type": "response", "command": "prompt", "success": true}
+EVENT {"type": "agent_end", "messages": [{"role": "user", "content": [{"type": "text", "text": "Reply READY only. Do not use tools."}], "attribution": "user", "timestamp": 1790257711319}, {"role": "assistant", "content": [{"type": "text", "text": "READY", "textSignature": "{\"v\":1,\"id\":\"msg_0230c6e2832f5fd7016ab52a30e46887d2af289fd93d226de4\",\"phase\":\"final_answer\"}"}], "api": "openai-codex-responses", "provider": "openai-codex", "model": "gpt-6-astra", "usage": {"input": 27896, "output": 5, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 27901, "cost": {"input": 0.27896000000000004, "output": 0.00025, "cacheRead": 0, "cacheWrite": 0, "total": 0.27921}}, "stopReason": "stop", "timestamp": 
+FIRST_TURN_ENDED
+SEND {"id": "arm", "type": "prompt", "message": "/fm-watch-arm-omp"}
+EVENT {"type": "extension_ui_request", "id": "158c388a48d112b0", "method": "notify", "message": "watcher: unchanged - omp extension already owns an arm child; no manual re-arm needed; call fm_watch_arm_omp again only after a later notification says the cycle is missing, failed, or unhealthy", "notifyType": "info"}
+EVENT {"id": "arm", "type": "response", "command": "prompt", "success": true}
+INITIAL_WATCHER 3167268
+SUCCESSOR 3171080
+WAKE_FRAMES ['{"type": "message_start", "message": {"role": "user", "content": [{"type": "text", "text": "\u2063FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /home/shayg/.no-mistakes/worktrees/f4bb769f35f8/01M39SN9QN3S0CB0PZFV7QPWJD/.omp-watch-active-629f1079/state/omp-e2e.status\\n\\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned."}], "attribution": "user", "timestamp": 1790257723558}}', '{"type": "message_end", "message": {"role": "user", "content": [{"type": "text", "text": "\u2063FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: /home/shayg/.no-mistakes/worktrees/f4bb769f35f8/01M39SN9QN3S0CB0PZFV7QPWJD/.omp-watch-active-629f1079/state/omp-e2e.status\\n\\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned."}], "attribution": "user", "timestamp": 1790257723558}}']
+LEDGER arm_pid=3167231	watcher_pid=3167268	origin=started	started_at=1790257711	ended_at=1790257720	exit_code=0	signal=none	reason=actionable-signal	beacon_age=5	lock_before=pid:3167268|identity:linux-starttime=33245436 cmdline-hex=62617368002f686f6d652f73686179672f2e6e6f2d6d697374616b65732f776f726b74726565732f6634626237363966333566382f30314d3339534e39514e335330434230505a4656375150574a442f62696e2f666d2d77617463682e736800	lock_after=pid:none|identity:none	successor=started:3171080
+
+RESULT {"first": true, "successor": true, "wake": true}
+STDERR 
