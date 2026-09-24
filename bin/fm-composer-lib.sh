@@ -504,8 +504,8 @@ FM_COMPOSER_MODE_HINT_RE_DEFAULT='^[[:space:]]*(⏵|⏸)'
 # row needs no rule: it sits ABOVE the prompt behind a blank line, and no
 # bare-composer path ever reads above-rows. The rule is consulted only as the boundary BELOW a bare composer,
 # never on the composer row itself.
-FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/[0-9]+K|[[:space:]]·[[:space:]][^·]+[[:space:]]·[[:space:]][^·]*[0-9]+(\.[0-9]+)?%/[0-9]+M([[:space:]]*($|⟲|·))'
-FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT='^[[:space:]]*⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+(○|◔|◑|◒|◕|◉)[[:space:]]+[^[:space:]]+[[:space:]]+·[[:space:]]+⑂[[:space:]]+[^·]+([[:space:]]·[[:space:]]+(◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+[KM]|⏱[[:space:]]+[^·]+[[:space:]]·[[:space:]]+[0-9]+h[[:space:]]+[0-9]+%)|[[:space:]]{2,}◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+[KM])'
+FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/[0-9]+K|[[:space:]]·[[:space:]][^·]+[[:space:]]·[[:space:]][^·]*(◫|)[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+M([[:space:]]*($|⟲|·))|^[[:space:]]*(○|◔|◑|◒|◕|◉)[[:space:]]+[^·]+[[:space:]]·[[:space:]]+⑂[[:space:]]+[^[:space:]·]+[^·]*[[:space:]]+◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+M([[:space:]]*($|⟲|·))'
+FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT='^[[:space:]]*(⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+(○|◔|◑|◒|◕|◉|⦸|⟳)[[:space:]]+[^[:space:]]+|(○|◔|◑|◒|◕|◉)[[:space:]]+[^·]+)[[:space:]]·[[:space:]]+⑂[[:space:]]+[^·]+([[:space:]]·)?[[:space:]]+⏱[[:space:]]+[^·]+[[:space:]]·[[:space:]]+[0-9]+h[[:space:]]+[0-9]+%'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
 # row, on the `›` row itself after the dim `Ask Codex to do anything`
