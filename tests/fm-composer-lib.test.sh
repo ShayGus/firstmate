@@ -486,6 +486,48 @@ test_matrix_omp_status_row_bounds_bare_composer() {
   pass "matrix: omp's status row bounds the bare composer's wrap region"
 }
 
+test_matrix_omp_footer_18211_bounds_bare_composer() {
+  # omp 18.2.11 changed the footer under the borderless `❯` composer
+  # (fixtures captured 2026-09-24 from live workers with an empty composer):
+  # the status row opens with `⬢` plus the model cell instead of `π ·`, the
+  # context cell prints `%/<n>M` instead of `%/<n>K`, a plugin row with a
+  # `○`/`●` leader sits beneath it, and a right-aligned `⚡ <n> tok/s` row
+  # floats above the prompt behind a blank line. Every row below the prompt
+  # read as typed text, so an idle omp pane refused doorbells, relaunches,
+  # and exits with "composer visibly holds pending text".
+  local idle_circle idle_bullet typed wrapped
+  idle_circle=$'some transcript\n                                                   ⚡ 37.1 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/jotzu-mention-display-name-fallback         Add Ide… · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)\n○ 🐴 ponytail: ⚡ FULL'
+  idle_bullet=$'some transcript\n                                                   ⚡ 12.4 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
+  typed=$'some transcript\n\n❯ fix the flaky test\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
+  # Non-vacuousness: each new footer row is real non-blank content that the
+  # wrap region would otherwise take as typed input.
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch' \
+    || fail "the 18.2.11 omp status row must be recognized as furniture"
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲' \
+    || fail "the 18.2.11 omp %/M context cell must be recognized as furniture"
+  _fm_composer_row_is_omp_status ' · ◫ 9.0%/? ⟲' \
+    || fail "the unknown-total omp context cell must be recognized as furniture"
+  _fm_composer_row_is_omp_status '○ 🐴 ponytail: ⚡ FULL' \
+    || fail "the idle plugin row must be recognized as furniture"
+  _fm_composer_row_is_omp_status '● 🐴 ponytail: ⚡ FULL' \
+    || fail "the variant plugin row must be recognized as furniture"
+  _fm_composer_row_is_omp_status 'fix the flaky test' \
+    && fail "ordinary typed text must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status 'fix · tests before pushing' \
+    && fail "wrapped typed text with a middle dot must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status '⬢ fix the flaky test' \
+    && fail "an icon-led row with no middle dot must not be mistaken for omp status furniture"
+  assert_screen "idle omp 18.2.11 (circle plugin row)" empty "$CAPS_STYLED" "$idle_circle"
+  assert_screen "idle omp 18.2.11 (bullet plugin row)" empty "$CAPS_STYLED" "$idle_bullet"
+  assert_screen "idle omp 18.2.11 on a plain capture" empty "$CAPS_PLAIN" "$idle_bullet"
+  assert_screen "typed omp 18.2.11 text is pending" pending "$CAPS_STYLED" "$typed"
+  assert_screen "typed omp 18.2.11 text on plain backends" unknown "$CAPS_PLAIN" "$typed"
+  # The boundary must not cut a bare composer's own wrapped input.
+  wrapped=$'some transcript\n\n❯ please run the suite and then\nfix · tests before pushing'
+  assert_screen "wrapped typed text with a middle dot stays pending" pending "$CAPS_TMUX" "$wrapped" 3
+  pass "matrix: omp 18.2.11 footer rows bound the bare composer's wrap region"
+}
+
 # codex_cell <grey> <glyph>: one codex 0.154 starfield cell exactly as the
 # harness draws it - a truecolor grey foreground, the composer's grey
 # background, the braille glyph, then a reset.
@@ -926,6 +968,7 @@ test_matrix_muse_truecolor_glyph_survives_signal_loss
 test_matrix_cursor_reverse_video_placeholder_remnant
 test_matrix_herdr_halfblock_rule_bounds_bare_wrap
 test_matrix_omp_status_row_bounds_bare_composer
+test_matrix_omp_footer_18211_bounds_bare_composer
 test_matrix_codex_idle_starfield_furniture
 test_matrix_pi_separated_needs_identity
 test_matrix_opencode_leftbar_signals
