@@ -573,6 +573,58 @@ EOF
   [ -z "$out" ] || fail "omp watch extension test printed output: $out"
   pass ".omp watch extension: fm_watch_arm_omp arms once, repeats as a no-op, and delivers an actionable close as one follow-up"
 }
+test_watch_extension_rearms_after_stale_shutdown() {
+  local repo home out status
+  repo="$TMP_ROOT/watch-wedge/repo"; home="$TMP_ROOT/watch-wedge/home"
+  install_omp_extension_fixture "$repo"
+  mkdir -p "$home/state"
+  # The successor stays up; only the arm verdict is under test.
+  cat > "$repo/bin/fm-watch-arm.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'watcher: started pid=%s (beacon 0s) recovery-generation=gen-1\n' "$$"
+sleep 30
+SH
+  chmod +x "$repo/bin/fm-watch-arm.sh"
+  out=$(FM_HOME="$home" FM_ROOT_OVERRIDE="$repo" FM_OMP_ARM_READY_TIMEOUT_MS=3000 FM_WATCH_REARM_RETRY_LIMIT=1 FM_WATCH_REARM_RETRY_BASE_MS=5 FM_WATCH_REARM_RETRY_MAX_MS=10 \
+    EXT="$repo/.omp/extensions/fm-primary-omp-watch.ts" node --input-type=module 2>&1 <<'EOF'
+import { pathToFileURL } from "node:url";
+import { writeFileSync } from "node:fs";
+writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
+function fakePi() {
+  const handlers = new Map();
+  const api = {
+    on(e, h) { handlers.set(e, h); },
+    registerCommand() {},
+    registerTool(t) { api.tool = t; },
+    sendUserMessage() { return undefined; },
+  };
+  return { handlers, api };
+}
+const mod = await import(pathToFileURL(process.env.EXT).href);
+// The live primary session arms its watcher.
+const main = fakePi();
+mod.default(main.api);
+if (!main.api.tool || main.api.tool.name !== "fm_watch_arm_omp") throw new Error("fm_watch_arm_omp was not registered");
+const first = await main.api.tool.execute();
+if (!/^watcher: started omp extension arm child 1;/.test(first.content[0].text)) throw new Error(`primary did not arm: ${first.content[0].text}`);
+// An in-process subagent session loads the same extension module and steals
+// the shared active generation; the primary stays live and answering.
+const sub = fakePi();
+mod.default(sub.api);
+// The subagent session is disposed without the primary ever seeing another
+// session_start; its shutdown stops the shared active generation.
+await sub.handlers.get("session_shutdown")({}, {});
+// The next repair call must re-arm instead of wedging on "shutting down".
+const healed = await main.api.tool.execute();
+if (!healed.details?.ok || !/^watcher: started omp extension arm child/.test(healed.content[0].text)) throw new Error(`re-arm wedged after stale shutdown: ${healed.content[0].text}`);
+process.exit(0);
+EOF
+)
+  status=$?
+  expect_code 0 "$status" "omp watch stale-shutdown re-arm: $out"
+  [ -z "$out" ] || fail "omp stale-shutdown test printed output: $out"
+  pass ".omp watch extension: fm_watch_arm_omp re-arms after a stale shutdown wedges the generation"
+}
 
 # An opted-in home spawns the supervision host in the arm's place; its streamed
 # status line drives readiness and the handling handoff, and a handed-back
@@ -803,3 +855,4 @@ test_watch_extension_arms_and_delivers
 test_watch_extension_runs_the_supervision_host
 test_watch_extension_replays_a_host_only_boundary_across_replacement
 test_watch_extension_delivers_a_split_host_close_whole
+test_watch_extension_rearms_after_stale_shutdown

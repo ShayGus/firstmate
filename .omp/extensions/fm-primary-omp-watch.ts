@@ -1048,7 +1048,18 @@ export default function (pi: ExtensionAPI) {
   }
 
   function activateOwnedWatch(owner: SessionGeneration): ArmResult {
-    if (!generationIsLive(owner)) return { ok: false, message: shuttingDownMessage };
+    if (!generationIsLive(owner)) {
+      // A session_shutdown with no following session_start (compaction, or an
+      // in-process subagent session that stole the shared active generation
+      // and was then disposed) wedges this live session: every later
+      // fm_watch_arm_omp call refuses with "shutting down". Reclaim ownership
+      // with a fresh generation when no other generation is live. A live
+      // foreign owner keeps single-owner semantics so two sessions never arm.
+      if (activeGeneration && !activeGeneration.stopping) return { ok: false, message: shuttingDownMessage };
+      owner = createGeneration();
+      generation = owner;
+      activateGeneration(owner);
+    }
     if (lockOwnership() !== "owned") return startArm(owner);
     replacementCoordinator.receiver = receiveReplacementActionable;
     let pending: PendingActionableClose[] = [];
