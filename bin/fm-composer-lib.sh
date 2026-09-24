@@ -495,19 +495,16 @@ FM_COMPOSER_MODE_HINT_RE_DEFAULT='^[[:space:]]*(⏵|⏸)'
 # then a middle dot (`π` under the unicode preset, `󰵗` under nerd: the
 # `icon.omp` of those omp 18.1.11 presets, never an arbitrary short token, so
 # a wrapped typed row such as `fix · tests` stays composer input; `⬢` under
-# 18.2.11 leads with the model cell before the first middle dot, so its
-# alternative requires a spaced middle dot later in the row; the ascii
+# 18.2.11 leads with the model cell before a recognized status cell; the ascii
 # preset's `pi` is deliberately absent because that preset's `sep.dot` is
 # ` - `, so its status row never carries a middle dot and a `pi ·` alternative
 # could only ever match typed text), when it opens with one of omp's spinner
-# frames then an elapsed cell, when it carries the context-usage cell after
-# a middle dot (totals `K`, `M`, or `?`), or when it opens with a plugin
-# leader (`○` idle, `●` variant: matched as glyphs, never by plugin name, so
-# a wrapped typed row stays composer input). The right-aligned `⚡ <n> tok/s`
+# frames then an elapsed cell, or when it opens with a plugin leader (`○`
+# idle, `●` variant) followed by a named plugin and its value. The right-aligned `⚡ <n> tok/s`
 # row needs no rule: it sits ABOVE the prompt behind a blank line, and no
 # bare-composer path ever reads above-rows. The rule is consulted only as the boundary BELOW a bare composer,
 # never on the composer row itself.
-FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*⬢[[:space:]]+.*[[:space:]]·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|[[:space:]]·[[:space:]].*[0-9]+(\.[0-9]+)?%/([0-9]+[KM]|\?)|^[[:space:]]*[○●][[:space:]]'
+FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+(◉|⑂|◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+[KM]|⏱)|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)|^[[:space:]]*[○●][[:space:]]+[^:]+:[[:space:]]+[^[:space:]]'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
 # row, on the `›` row itself after the dim `Ask Codex to do anything`

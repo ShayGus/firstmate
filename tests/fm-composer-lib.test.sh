@@ -505,8 +505,8 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
     || fail "the 18.2.11 omp status row must be recognized as furniture"
   _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲' \
     || fail "the 18.2.11 omp %/M context cell must be recognized as furniture"
-  _fm_composer_row_is_omp_status ' · ◫ 9.0%/? ⟲' \
-    || fail "the unknown-total omp context cell must be recognized as furniture"
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◫ 9.0%/1M ⟲' \
+    || fail "a numeric %/M context cell must identify an omp status row"
   _fm_composer_row_is_omp_status '○ 🐴 ponytail: ⚡ FULL' \
     || fail "the idle plugin row must be recognized as furniture"
   _fm_composer_row_is_omp_status '● 🐴 ponytail: ⚡ FULL' \
@@ -517,6 +517,14 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
     && fail "wrapped typed text with a middle dot must not be mistaken for omp status furniture"
   _fm_composer_row_is_omp_status '⬢ fix the flaky test' \
     && fail "an icon-led row with no middle dot must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status '⬢ fix · tests before pushing' \
+    && fail "an icon-led draft with a middle dot must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status 'review · 9.0%/1M backups' \
+    && fail "a draft with numeric context-like text must not be mistaken for omp status furniture"
+  _fm_composer_row_is_omp_status '● review backups' \
+    && fail "a bullet-led draft must not be mistaken for omp plugin furniture"
+  _fm_composer_row_is_omp_status '○ review backups' \
+    && fail "a circle-led draft must not be mistaken for omp plugin furniture"
   assert_screen "idle omp 18.2.11 (circle plugin row)" empty "$CAPS_STYLED" "$idle_circle"
   assert_screen "idle omp 18.2.11 (bullet plugin row)" empty "$CAPS_STYLED" "$idle_bullet"
   assert_screen "idle omp 18.2.11 on a plain capture" empty "$CAPS_PLAIN" "$idle_bullet"
@@ -525,6 +533,15 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # The boundary must not cut a bare composer's own wrapped input.
   wrapped=$'some transcript\n\n❯ please run the suite and then\nfix · tests before pushing'
   assert_screen "wrapped typed text with a middle dot stays pending" pending "$CAPS_TMUX" "$wrapped" 3
+  local continuation out
+  for continuation in '⬢ fix · tests before pushing' 'review · 9.0%/1M backups' '● review backups' '○ review backups'; do
+    wrapped=$'some transcript\n\n❯ please run the suite and then\n'"$continuation"
+    assert_screen "wrapped draft $continuation with cursor" pending "$CAPS_TMUX" "$wrapped" 3
+    assert_screen "wrapped draft $continuation without cursor" pending "$CAPS_STYLED" "$wrapped"
+    out=$(fm_composer_extract_selected_content "$CAPS_STYLED" "$wrapped")
+    [ "$out" = "please run the suite and then $continuation" ] \
+      || fail "wrapped draft $continuation must remain in selected content, got '$out'"
+  done
   pass "matrix: omp 18.2.11 footer rows bound the bare composer's wrap region"
 }
 
