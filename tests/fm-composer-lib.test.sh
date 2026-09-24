@@ -495,11 +495,11 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # floats above the prompt behind a blank line. Every row below the prompt
   # read as typed text, so an idle omp pane refused doorbells, relaunches,
   # and exits with "composer visibly holds pending text".
-  local idle_circle idle_bullet idle_medium idle_quota idle_183 typed wrapped continuation out
+  local idle_circle idle_bullet idle_medium idle_quota idle_183 typed wrapped continuation thinking out
   idle_circle=$'some transcript\n                                                   ⚡ 37.1 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/jotzu-mention-display-name-fallback         Add Ide… · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)\n○ 🐴 ponytail: ⚡ FULL'
   idle_bullet=$'some transcript\n                                                   ⚡ 12.4 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
-  idle_medium=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◉ medium · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
-  idle_quota=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◉ high · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)'
+  idle_medium=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◑ med · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
+  idle_quota=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◒ high · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)'
   idle_183=$'some transcript\n\n❯\n ⬢ GPT-6-Sol · ◑ med · ⑂ detached                    ◫ 5.5%/872K ⟲\n○ 🐴 ponytail: ⚡ FULL'
   typed=$'some transcript\n\n❯ fix the flaky test\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
   # Non-vacuousness: each new footer row is real non-blank content that the
@@ -536,6 +536,14 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   assert_screen "idle omp quota without plugin" empty "$CAPS_STYLED" "$idle_quota"
   assert_screen "idle omp 18.3.0 right-aligned context" empty "$CAPS_STYLED" "$idle_183"
   assert_screen "idle omp 18.3.0 without plugin" empty "$CAPS_STYLED" "${idle_183%$'\n'*}"
+  for thinking in '○ min' '◔ low' '◑ med' '◒ high' '◕ xhigh' '◉ max'; do
+    wrapped=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · '"$thinking"$' · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
+    assert_screen "idle omp 18.2.11 numeric context with $thinking" empty "$CAPS_STYLED" "$wrapped"
+  done
+  wrapped=$'some transcript\n\n❯\n '$'\uEC19'$' model · '$'\uF126'$' detached · '$'\uE70F'$' 36.7%/41K'
+  assert_screen "idle omp preset-independent numeric K context" empty "$CAPS_STYLED" "$wrapped"
+  wrapped=$'some transcript\n\n❯\n ⬢ GPT-6-Sol · ◒ high · ⑂ detached ◫ 5.5%/872K ⟲\n○ 🐴 ponytail: ⚡ FULL'
+  assert_screen "idle omp high with compact K context" empty "$CAPS_STYLED" "$wrapped"
   assert_screen "idle omp 18.2.11 on a plain capture" empty "$CAPS_PLAIN" "$idle_bullet"
   assert_screen "typed omp 18.2.11 text is pending" pending "$CAPS_STYLED" "$typed"
   assert_screen "typed omp 18.2.11 text on plain backends" unknown "$CAPS_PLAIN" "$typed"
