@@ -45,6 +45,12 @@
 // handoff carries actionable closes that were still pending delivery; its
 // durable state lives at state/extensions/omp-primary-watch/session-replacement-actionable.json.
 // Stale callbacks from a prior generation are no-ops against the active replacement.
+// The active generation is module-shared, and an in-process subagent session
+// binds this same module, so a bind never displaces a live generation: the
+// subagent's start and shutdown leave the primary's arm and pending closes
+// alone. A shutdown not followed by session_start for the still-live primary
+// leaves no live generation; the next fm_watch_arm_omp repair then reclaims
+// ownership with a fresh generation instead of refusing as shutting down.
 //
 // Delivery versus consumption (stated once here):
 // A main follow-up is delivered once omp accepts it (sendUserMessage returns).
