@@ -496,7 +496,8 @@ FM_COMPOSER_MODE_HINT_RE_DEFAULT='^[[:space:]]*(⏵|⏸)'
 # `icon.omp` of those omp 18.1.11 presets, never an arbitrary short token, so
 # a wrapped typed row such as `fix · tests` stays composer input; `⬢` under
 # 18.2.11 leads with the model cell before effort, branch, and numeric context
-# or quota cells; the ascii
+# or quota cells, and under omp's default `statusLine.compactThinkingLevel` a
+# thinking glyph (`○ ◔ ◑ ◒ ◕ ◉`) replaces both `⬢` and the effort cell; the ascii
 # preset's `pi` is deliberately absent because that preset's `sep.dot` is
 # ` - `, so its status row never carries a middle dot and a `pi ·` alternative
 # could only ever match typed text), when it opens with one of omp's spinner
