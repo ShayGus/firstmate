@@ -61,7 +61,7 @@
 #                A bare composer's WRAP region (typed input continuing on the
 #                rows beneath the glyph row) is bounded by blank rows, by
 #                structural edges, and by the FURNITURE rows a harness draws
-#                directly below its composer - omp's status and plugin rows and
+#                directly below its composer - omp's status rows and
 #                braille-only animation rows (declared once below, next to
 #                the idle placeholders) - none of which is ever typed input.
 #   left-bar   - opencode: rows prefixed by a heavy left bar `┃` with no
@@ -495,8 +495,8 @@ FM_COMPOSER_MODE_HINT_RE_DEFAULT='^[[:space:]]*(⏵|⏸)'
 # then a middle dot (`π` under the unicode preset, `󰵗` under nerd: the
 # `icon.omp` of those omp 18.1.11 presets, never an arbitrary short token, so
 # a wrapped typed row such as `fix · tests` stays composer input; `⬢` under
-# 18.2.11 leads with the model cell before a recognized status cell and a
-# plugin row below it; the ascii
+# 18.2.11 leads with the model cell before effort, branch, and numeric context
+# or quota cells; the ascii
 # preset's `pi` is deliberately absent because that preset's `sep.dot` is
 # ` - `, so its status row never carries a middle dot and a `pi ·` alternative
 # could only ever match typed text), when it opens with one of omp's spinner
@@ -505,8 +505,7 @@ FM_COMPOSER_MODE_HINT_RE_DEFAULT='^[[:space:]]*(⏵|⏸)'
 # bare-composer path ever reads above-rows. The rule is consulted only as the boundary BELOW a bare composer,
 # never on the composer row itself.
 FM_COMPOSER_OMP_STATUS_RE_DEFAULT='^[[:space:]]*(π|󰵗)[[:space:]]+·[[:space:]]|^[[:space:]]*'"$FM_OMP_SPINNER_FRAMES_RE"'[[:space:]]+[0-9]+[smh]([[:space:]]|$)'
-FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT='^[[:space:]]*⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+◉[[:space:]]+max[[:space:]]+·[[:space:]]+⑂[[:space:]]+[^[:space:]]'
-FM_COMPOSER_OMP_PLUGIN_RE_DEFAULT='^[[:space:]]*(○|●)[[:space:]]+[^:]+:[[:space:]]+[^[:space:]]'
+FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT='^[[:space:]]*⬢[[:space:]]+[^·]+[[:space:]]·[[:space:]]+(◉|◑)[[:space:]]+[^[:space:]]+[[:space:]]+·[[:space:]]+⑂[[:space:]]+[^·]+([[:space:]]·[[:space:]]+(◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+[KM]|⏱[[:space:]]+[^·]+[[:space:]]·[[:space:]]+[0-9]+h[[:space:]]+[0-9]+%)|[[:space:]]{2,}◫[[:space:]]+[0-9]+(\.[0-9]+)?%/[0-9]+[KM])'
 # Braille-pattern cells (U+2800..U+28FF) are animation furniture: codex-cli
 # 0.154.0 draws an idle "starfield" of them on the row above its `›` prompt
 # row, on the `›` row itself after the dim `Ask Codex to do anything`
@@ -1194,10 +1193,9 @@ _fm_composer_classify_bare_row() {  # <screen> <styled> <row>
 # _fm_composer_row_is_omp_status: 0 when the trimmed row is omp's status line
 # (FM_COMPOSER_OMP_STATUS_RE_DEFAULT above) - composer furniture that sits
 # below a bare composer and must bound its wrap region exactly as an edge does.
-_fm_composer_row_is_omp_status() {  # <trimmed-row> <next-row>
+_fm_composer_row_is_omp_status() {  # <trimmed-row>
   fm_composer_idle_matches "$1" "${FM_COMPOSER_OMP_STATUS_RE:-$FM_COMPOSER_OMP_STATUS_RE_DEFAULT}" sensitive && return 0
-  fm_composer_idle_matches "$1" "$FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT" sensitive \
-    && fm_composer_idle_matches "${2:-}" "$FM_COMPOSER_OMP_PLUGIN_RE_DEFAULT" sensitive
+  fm_composer_idle_matches "$1" "$FM_COMPOSER_OMP_NEW_STATUS_RE_DEFAULT" sensitive
 }
 
 # _fm_composer_row_is_braille_furniture: 0 when the row is non-blank and its
@@ -1242,7 +1240,7 @@ _fm_composer_wrap_region_ok() {  # <plain-screen> <glyph-row> <cursor-row>
     fm_composer_normalize_trim_var trimmed
     [ -n "$trimmed" ] || return 1
     if fm_composer_row_has_edge "$trimmed"; then return 1; fi
-    if _fm_composer_row_is_omp_status "$trimmed" "$(_fm_composer_screen_row "$((row + 1))" "$plain")"; then return 1; fi
+    if _fm_composer_row_is_omp_status "$trimmed"; then return 1; fi
     if _fm_composer_row_is_braille_furniture "$trimmed"; then return 1; fi
     if fm_composer_leading_shell_glyph_var glyph "$trimmed"; then return 1; fi
     row=$((row + 1))
@@ -1333,7 +1331,7 @@ _fm_composer_leftbar_floor_row() {  # <trimmed-row>
 # a harness's own furniture drawn below its composer, given <proof-glyph> - the
 # agent glyph that proved the envelope above it. Exactly four things qualify,
 # every one of them already owned elsewhere in this file:
-#   - omp's status and plugin rows and braille-only animation rows, the furniture rows
+#   - omp's status rows and braille-only animation rows, the furniture rows
 #     that already bound a bare composer's wrap region;
 #   - claude's permission-mode hint row (FM_COMPOSER_MODE_HINT_RE_DEFAULT);
 #   - a row leading with an agent glyph OTHER than the one that proved the
@@ -1344,10 +1342,10 @@ _fm_composer_leftbar_floor_row() {  # <trimmed-row>
 # a row leading with the SAME glyph the envelope was proven by (`❯ my typed
 # draft`, which is a live composer) - is NOT furniture, so the envelope above
 # it stays stale and the verdict stays a refusal.
-_fm_composer_row_is_composer_furniture() {  # <trimmed-row> <proof-glyph> <next-row>
+_fm_composer_row_is_composer_furniture() {  # <trimmed-row> <proof-glyph>
   local row=$1 proof=$2 glyph=''
   [ -n "$row" ] || return 1
-  _fm_composer_row_is_omp_status "$row" "${3:-}" && return 0
+  _fm_composer_row_is_omp_status "$row" && return 0
   _fm_composer_row_is_braille_furniture "$row" && return 0
   fm_composer_idle_matches "$row" \
     "${FM_COMPOSER_MODE_HINT_RE:-$FM_COMPOSER_MODE_HINT_RE_DEFAULT}" sensitive && return 0
@@ -1411,7 +1409,7 @@ _fm_composer_locate_footer_zone() {  # <plain>
     trimmed=$(_fm_composer_screen_row "$next" "$plain")
     fm_composer_normalize_trim_var trimmed
     [ -n "$trimmed" ] || break
-    _fm_composer_row_is_composer_furniture "$trimmed" "$proof" "$(_fm_composer_screen_row "$((next + 1))" "$plain")" || return 1
+    _fm_composer_row_is_composer_furniture "$trimmed" "$proof" || return 1
     FM_COMPOSER_FOOTER_LAST=$next
     next=$((next + 1))
   done
@@ -1489,7 +1487,7 @@ _fm_composer_select_cursorless() {
       fm_composer_normalize_trim_var trimmed
       [ -n "$trimmed" ] || break
       fm_composer_row_has_edge "$trimmed" && break
-      _fm_composer_row_is_omp_status "$trimmed" "$(_fm_composer_screen_row "$((next + 1))" "$plain")" && break
+      _fm_composer_row_is_omp_status "$trimmed" && break
       _fm_composer_row_is_braille_furniture "$trimmed" && break
       FM_COMPOSER_SELECTED_LAST=$next
       next=$((next + 1))

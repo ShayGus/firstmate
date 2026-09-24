@@ -495,22 +495,27 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   # floats above the prompt behind a blank line. Every row below the prompt
   # read as typed text, so an idle omp pane refused doorbells, relaunches,
   # and exits with "composer visibly holds pending text".
-  local idle_circle idle_bullet typed wrapped continuation out
+  local idle_circle idle_bullet idle_medium idle_quota idle_183 typed wrapped continuation out
   idle_circle=$'some transcript\n                                                   ⚡ 37.1 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/jotzu-mention-display-name-fallback         Add Ide… · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)\n○ 🐴 ponytail: ⚡ FULL'
   idle_bullet=$'some transcript\n                                                   ⚡ 12.4 tok/s\n\n❯\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
+  idle_medium=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◉ medium · ⑂ fm/branch · ◫ 9.0%/1M ⟲'
+  idle_quota=$'some transcript\n\n❯\n ⬢ GLM-5.3-Flash · ◉ high · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m) · 7d 96% (3d 20h)'
+  idle_183=$'some transcript\n\n❯\n ⬢ GPT-6-Sol · ◑ med · ⑂ detached                    ◫ 5.5%/872K ⟲\n○ 🐴 ponytail: ⚡ FULL'
   typed=$'some transcript\n\n❯ fix the flaky test\n ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲ · 💾 96.05% · ⤵ 174K · ⤴ 26K\n● 🐴 ponytail: ⚡ FULL'
   # Non-vacuousness: each new footer row is real non-blank content that the
   # wrap region would otherwise take as typed input.
-  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch' '○ 🐴 ponytail: ⚡ FULL' \
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ⏱ pro · 5h 94% (2h 33m)' \
     || fail "the 18.2.11 omp status row must be recognized as furniture"
-  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲' '● 🐴 ponytail: ⚡ FULL' \
+  _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch · ◫ 9.0%/1M ⟲' \
     || fail "the 18.2.11 omp %/M context cell must be recognized as furniture"
+  _fm_composer_row_is_omp_status ' ⬢ GPT-6-Sol · ◑ med · ⑂ detached                    ◫ 5.5%/872K ⟲' \
+    || fail "the 18.3.0 omp right-aligned numeric context must be recognized as furniture"
   _fm_composer_row_is_omp_status ' ⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch' \
-    && fail "an unpaired status-shaped draft must not be mistaken for omp furniture"
+    && fail "a status prefix without a usage cell must not be mistaken for omp furniture"
   _fm_composer_row_is_omp_status '● Action: keep backups' \
     && fail "a plugin-shaped draft must not be mistaken for omp status furniture"
-  _fm_composer_row_is_omp_status '⬢ Notes · ◉ tasks' '● Action: keep backups' \
-    && fail "a paired draft without the observed status shape must not be mistaken for omp furniture"
+  _fm_composer_row_is_omp_status '⬢ Notes · ◉ tasks' \
+    && fail "a draft without the observed status shape must not be mistaken for omp furniture"
   _fm_composer_row_is_omp_status 'fix the flaky test' \
     && fail "ordinary typed text must not be mistaken for omp status furniture"
   _fm_composer_row_is_omp_status 'fix · tests before pushing' \
@@ -527,6 +532,10 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
     && fail "a circle-led draft must not be mistaken for omp plugin furniture"
   assert_screen "idle omp 18.2.11 (circle plugin row)" empty "$CAPS_STYLED" "$idle_circle"
   assert_screen "idle omp 18.2.11 (bullet plugin row)" empty "$CAPS_STYLED" "$idle_bullet"
+  assert_screen "idle omp medium without plugin" empty "$CAPS_STYLED" "$idle_medium"
+  assert_screen "idle omp quota without plugin" empty "$CAPS_STYLED" "$idle_quota"
+  assert_screen "idle omp 18.3.0 right-aligned context" empty "$CAPS_STYLED" "$idle_183"
+  assert_screen "idle omp 18.3.0 without plugin" empty "$CAPS_STYLED" "${idle_183%$'\n'*}"
   assert_screen "idle omp 18.2.11 on a plain capture" empty "$CAPS_PLAIN" "$idle_bullet"
   assert_screen "typed omp 18.2.11 text is pending" pending "$CAPS_STYLED" "$typed"
   assert_screen "typed omp 18.2.11 text on plain backends" unknown "$CAPS_PLAIN" "$typed"
@@ -553,6 +562,14 @@ test_matrix_omp_footer_18211_bounds_bare_composer() {
   out=$(fm_composer_extract_selected_content "$CAPS_STYLED" "$wrapped")
   [ "$out" = '⬢ Notes · ◉ tasks ● Action: keep backups' ] \
     || fail "paired footer-looking draft must remain extracted, got '$out'"
+  wrapped=$'some transcript\n\n❯\n⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch\n● Action: keep backups'
+  assert_screen "status-prefix draft with plugin-looking continuation and cursor" pending "$CAPS_TMUX" "$wrapped" 4
+  assert_screen "status-prefix draft with plugin-looking continuation without cursor" pending "$CAPS_STYLED" "$wrapped"
+  out=$(fm_composer_extract_selected_content "$CAPS_STYLED" "$wrapped")
+  [ "$out" = '⬢ GLM-5.3-Flash · ◉ max · ⑂ fm/branch ● Action: keep backups' ] \
+    || fail "status-prefix draft and plugin-looking continuation must remain extracted, got '$out'"
+  wrapped=$'some transcript\n\n❯\n⬢ GPT-6-Sol · ◑ med · ⑂ detached\n● Action: keep backups'
+  assert_screen "18.3.0 status-prefix draft without context" pending "$CAPS_STYLED" "$wrapped"
   pass "matrix: omp 18.2.11 footer rows bound the bare composer's wrap region"
 }
 
