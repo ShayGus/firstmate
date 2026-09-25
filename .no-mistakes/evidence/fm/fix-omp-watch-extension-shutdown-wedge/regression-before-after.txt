@@ -1,0 +1,13 @@
+### extension from b805823 (b805823)
+not ok - omp watch stale-shutdown re-arm: file:///tmp/tmp.lKhefRf4J6/src/[eval1]:27
+if (main.sent.length !== 1 || !main.sent[0].includes("signal: omp-stale-owner done")) throw new Error(`primary lost actionable close: ${JSON.stringify(main.sent)}`);
+                                                                                            ^
+
+Error: primary lost actionable close: []
+    at file:///tmp/tmp.lKhefRf4J6/src/[eval1]:27:93
+
+Node.js v26.8.2: expected exit 0, got 1
+exit=1
+### extension from HEAD (084c978)
+ok - .omp watch extension: actionable close survives subagent lifecycle and primary re-arms after shutdown
+exit=0

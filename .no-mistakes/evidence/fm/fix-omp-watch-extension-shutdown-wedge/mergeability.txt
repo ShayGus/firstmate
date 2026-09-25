@@ -1,0 +1,48 @@
+## upstream main tip
+b805823a6beef7f59b2a10fe50ae6054c39cf571	refs/heads/main
+## branch HEAD
+084c9783dfa179c55146cb766444082a11176a2c
+## ancestry
+HEAD descends from upstream main b805823 (fast-forward mergeable)
+## merge-tree
+8ba15c5f88cd9999c952214c7f04d958b9218539
+
+clean, no conflicts
+## range-diff previously reviewed series vs rebased series
+1:  7584b66 ! 1:  d433675 Fix omp watch extension wedging in 'session is shutting down'
+    @@ tests/fm-omp-harness.test.sh: EOF
+     +  pass ".omp watch extension: fm_watch_arm_omp re-arms after a stale shutdown wedges the generation"
+     +}
+      
+    - test_detection_anchored_name_and_marker_precedence
+    - test_lock_identity_and_liveness_classification
+    -@@ tests/fm-omp-harness.test.sh: test_control_composer_and_model_tables
+    - test_ownership_proof_is_omp_keyed
+    - test_turnend_guard_extension_compels_one_continuation
+    - test_watch_extension_arms_and_delivers
+    + # An opted-in home spawns the supervision host in the arm's place; its streamed
+    + # status line drives readiness and the handling handoff, and a handed-back
+    +@@ tests/fm-omp-harness.test.sh: test_watch_extension_arms_and_delivers
+    + test_watch_extension_runs_the_supervision_host
+    + test_watch_extension_replays_a_host_only_boundary_across_replacement
+    + test_watch_extension_delivers_a_split_host_close_whole
+     +test_watch_extension_rearms_after_stale_shutdown
+2:  82eca2a ! 2:  0cf60f2 no-mistakes(review): Preserve primary watcher ownership and actionable reports
+    @@ tests/fm-omp-harness.test.sh: EOF
+     +  pass ".omp watch extension: actionable close survives subagent lifecycle and primary re-arms after shutdown"
+      }
+      
+    - test_detection_anchored_name_and_marker_precedence
+    + # An opted-in home spawns the supervision host in the arm's place; its streamed
+3:  10996ed ! 3:  6aeea27 no-mistakes(test): Make OMP marker regression independent of host harness ancestry
+    @@ tests/fm-omp-harness.test.sh: test_detection_anchored_name_and_marker_precedence
+        # shellcheck disable=SC2016 # the quoted body expands inside the named shell
+     +  without_marker=$(env -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS -u FM_OMP_HARNESS CLAUDECODE=1 \
+     +    bash -c '"$1"; :' _ "$HARNESS")
+    ++  # shellcheck disable=SC2016 # the quoted body expands inside the named shell
+        out=$(env -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS CLAUDECODE=1 FM_OMP_HARNESS=omp \
+          bash -c '"$1"; :' _ "$HARNESS")
+     -  [ "$out" = claude ] || fail "a leaked FM_OMP_HARNESS without an omp ancestor must not relabel a claude worker, got '$out'"
+4:  bce8ca5 = 4:  084c978 no-mistakes(document): Document omp generation reclaim and subagent bind rules
+## extension code patch identical?
+identical +/- lines
