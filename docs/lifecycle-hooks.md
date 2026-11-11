@@ -53,7 +53,7 @@ Enable hooks separately in every dispatching home; configuration is not inherite
 | `brief.generated.after` | After successfully writing a ship/scout scaffold with its configured include, or a secondmate charter; placeholders may still require filling. |
 | `task.steer.before` | Before durable inbox enqueue, on both local and remote text paths. |
 | `task.steer.after` | Enqueue is confirmed durable, before best-effort doorbell and reply bookkeeping; this does not mean the worker read or acted on the message. |
-| `task.merge.before` | After built-in local/forge merge checks and before performing a merge; pinned head and authority are checked again after the hook. |
+| `task.merge.before` | After built-in local/forge merge checks and before performing a merge; pinned head, authority, and forge mergeability are checked again after the hook. |
 | `task.merge.after` | Confirmed local landing, or confirmed PR landing through the shared outcome publisher, including poll-discovered merges. |
 | `task.cleanup.before` | After cleanup preflight and before concluding runs, closing endpoints, or returning the local copy. |
 | `task.cleanup.after` | Complete cleanup and final records; refused, partial, and lost-slot warning outcomes emit no success event. |
