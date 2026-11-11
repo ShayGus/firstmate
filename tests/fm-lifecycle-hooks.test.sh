@@ -326,6 +326,7 @@ SH
   chmod 600 "$HOME_DIR/config/hooks.json"
   mkdir -p "$CASE/elsewhere"
   rc=0
+  # shellcheck disable=SC2016 # $1 expands in the child shell.
   out=$(env -u FM_CONFIG_OVERRIDE -u FM_STATE_OVERRIDE -u FM_DATA_OVERRIDE -u FM_PROJECTS_OVERRIDE \
     CONFIG="$CASE/elsewhere" STATE="$CASE/elsewhere" DATA="$CASE/elsewhere" PROJECTS="$CASE/elsewhere" \
     bash -c '. "$1/bin/fm-hook-lib.sh"; fm_hook_begin task.steer steer task_id t && fm_hook_before' _ "$ROOT" 2>&1) || rc=$?
