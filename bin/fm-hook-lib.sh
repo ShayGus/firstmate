@@ -172,10 +172,10 @@ fm_hook_run() {
       hook_home=$(printf '%s' "$payload" | jq -r .home) || return 1
       # shellcheck disable=SC2016 # Child shell expands its own argv and PIPESTATUS.
       (cd "$hook_home" &&
-        export FM_HOME="$hook_home" FM_CONFIG_OVERRIDE="$FM_HOOK_CONFIG_DIR" \
+        fm_exec_timed "$seconds" 1 env FM_HOME="$hook_home" FM_CONFIG_OVERRIDE="$FM_HOOK_CONFIG_DIR" \
           FM_STATE_OVERRIDE="$FM_HOOK_STATE_DIR" FM_DATA_OVERRIDE="$FM_HOOK_DATA_DIR" \
-          FM_PROJECTS_OVERRIDE="$FM_HOOK_PROJECTS_DIR" &&
-        fm_exec_timed "$seconds" 1 bash -c '"$@" 2>&1 | tail -c 8192; exit "${PIPESTATUS[0]}"' _ "${argv[@]}"
+          FM_PROJECTS_OVERRIDE="$FM_HOOK_PROJECTS_DIR" \
+          bash -c '"$@" 2>&1 | tail -c 8192; exit "${PIPESTATUS[0]}"' _ "${argv[@]}"
       ) <<< "$payload" > "$output" 2>&1 || rc=$?
     fi
     if [ "$rc" -ne 0 ]; then
