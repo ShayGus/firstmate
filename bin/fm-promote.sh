@@ -56,6 +56,9 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Home-local command hooks: docs/lifecycle-hooks.md.
+# shellcheck source=bin/fm-hook-lib.sh
+. "$SCRIPT_DIR/fm-hook-lib.sh"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
@@ -188,6 +191,7 @@ CONTROL_LOCK_HELD=0
 META_LOCK=
 META_LOCK_HELD=0
 TMP=
+INSTRUCTIONS_CANDIDATE=
 META=
 SCOUT_BRIEF=
 BRIEF_ORIGINAL=
@@ -195,6 +199,7 @@ BRIEF_REPLACEMENT=
 promote_cleanup() {
   local status=$?
   [ -z "$TMP" ] || rm -f -- "$TMP" 2>/dev/null || true
+  [ -z "$INSTRUCTIONS_CANDIDATE" ] || rm -f -- "$INSTRUCTIONS_CANDIDATE" 2>/dev/null || true
   [ -z "$BRIEF_REPLACEMENT" ] || rm -f -- "$BRIEF_REPLACEMENT" 2>/dev/null || true
   if [ -n "$BRIEF_ORIGINAL" ] && [ -e "$BRIEF_ORIGINAL" ]; then
     mv -f -- "$BRIEF_ORIGINAL" "$SCOUT_BRIEF" 2>/dev/null || true
@@ -367,9 +372,8 @@ $PROMOTION_SHIP_SPEC
 EOF
   promote_delivery_contract
 } > "$TMP" || { echo "error: could not render ship instructions for mode=$MODE" >&2; exit 1; }
-mv "$TMP" "$INSTRUCTIONS"
+INSTRUCTIONS_CANDIDATE=$TMP
 TMP=
-[ -f "$INSTRUCTIONS" ] && [ -r "$INSTRUCTIONS" ] || { echo "error: ship instructions were not published as a readable file: $INSTRUCTIONS" >&2; exit 1; }
 
 # The current worker receives the instructions through fm-send, but a replacement
 # worker is launched from brief.md. Publish the same explicit precedence contract
@@ -384,6 +388,15 @@ BRIEF_REPLACEMENT="$DATA/$ID/.brief.md.promote.${BASHPID:-$$}"
   echo "error: could not render the promoted brief for mode=$MODE" >&2
   exit 1
 }
+fm_hook_begin worker.promote promote task_id "$ID" kind ship previous_kind scout \
+  project "$PROMOTE_PROJECT" mode "$MODE" yolo "$YOLO" branch "$BRANCH" \
+  base_branch "$BASE_BRANCH" source_brief_path "$SCOUT_BRIEF" \
+  brief_path "$BRIEF_REPLACEMENT" promotion_instructions_path "$INSTRUCTIONS_CANDIDATE" \
+  harness "$(fm_meta_get "$META" harness)" backend "$(fm_meta_get "$META" backend)" \
+  worktree "$(fm_meta_get "$META" worktree)" || exit 1
+fm_hook_before || exit 1
+mv "$INSTRUCTIONS_CANDIDATE" "$INSTRUCTIONS" || exit 1
+INSTRUCTIONS_CANDIDATE=
 BRIEF_ORIGINAL="$DATA/$ID/.brief.md.scout.${BASHPID:-$$}"
 mv "$SCOUT_BRIEF" "$BRIEF_ORIGINAL" || {
   echo "error: could not stage the scout brief for promotion: $SCOUT_BRIEF" >&2
@@ -418,6 +431,7 @@ rm -f -- "$BRIEF_ORIGINAL" 2>/dev/null || true
 BRIEF_ORIGINAL=
 fm_lock_release "$META_LOCK"
 META_LOCK_HELD=0
+fm_hook_after brief_path "$SCOUT_BRIEF" promotion_instructions_path "$INSTRUCTIONS"
 
 HOME_Q=$(printf '%q' "$FM_HOME")
 INSTRUCTIONS_Q=$(printf '%q' "$INSTRUCTIONS")

@@ -240,6 +240,9 @@ case "${1:-}" in
 esac
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Home-local command hooks: docs/lifecycle-hooks.md.
+# shellcheck source=bin/fm-hook-lib.sh
+. "$SCRIPT_DIR/fm-hook-lib.sh"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
@@ -1933,6 +1936,25 @@ case "$PROVIDER" in
       fi
       github_update_behind_branch || exit 1
     fi
+    fm_hook_begin task.merge pr task_id "$ID" pr_url "$URL" pinned_head "$FM_PR_MERGE_HEAD" || exit 1
+    fm_hook_before || exit 1
+    if [ "${FM_HOOK_ACTIVE:-0}" = 1 ]; then
+      HOOK_MERGE_HEAD=$FM_PR_MERGE_HEAD
+      mergeable_status=0
+      github_verify_mergeable || mergeable_status=$?
+      if [ "$mergeable_status" -ne 0 ]; then
+        if [ "$mergeable_status" -eq 3 ]; then
+          printf 'error: mergeability for %s is still being computed by GitHub; retry shortly\n' "$URL" >&2
+        fi
+        exit 1
+      fi
+      if [ "$FM_PR_GITHUB_BEHIND" = true ]; then
+        echo "error: $URL became behind its base during the merge hook; retry the merge" >&2
+        exit 1
+      fi
+      [ "$FM_PR_MERGE_HEAD" = "$HOOK_MERGE_HEAD" ] || { echo 'error: PR head changed during merge hook' >&2; exit 1; }
+      require_current_away_authority || exit $?
+    fi
     merge_status=0
     merge_output=$(gh pr merge "$PR_NUMBER" --repo "$PR_OWNER/$PR_REPO" \
       --match-head-commit "$FM_PR_MERGE_HEAD" \
@@ -1987,6 +2009,14 @@ case "$PROVIDER" in
     away_status=0
     require_current_away_authority || away_status=$?
     [ "$away_status" -eq 0 ] || exit "$away_status"
+    fm_hook_begin task.merge pr task_id "$ID" pr_url "$URL" pinned_head "$FM_PR_MERGE_HEAD" || exit 1
+    fm_hook_before || exit 1
+    if [ "${FM_HOOK_ACTIVE:-0}" = 1 ]; then
+      HOOK_MERGE_HEAD=$FM_PR_MERGE_HEAD
+      gitlab_verify_mergeable || exit 1
+      [ "$FM_PR_MERGE_HEAD" = "$HOOK_MERGE_HEAD" ] || { echo 'error: PR head changed during merge hook' >&2; exit 1; }
+      require_current_away_authority || exit $?
+    fi
     merge_status=0
     gitlab_merge_args=()
     if [ "$FM_PR_AWAY_POSTURE" = true ]; then
@@ -2024,6 +2054,14 @@ case "$PROVIDER" in
     # against a real instance), matching --match-head-commit/--sha above. tea
     # exposes no such flag on its own merge subcommand, so the API is called
     # directly through "tea api" instead.
+    fm_hook_begin task.merge pr task_id "$ID" pr_url "$URL" pinned_head "$FM_PR_MERGE_HEAD" || exit 1
+    fm_hook_before || exit 1
+    if [ "${FM_HOOK_ACTIVE:-0}" = 1 ]; then
+      HOOK_MERGE_HEAD=$FM_PR_MERGE_HEAD
+      forgejo_verify_mergeable || exit 1
+      [ "$FM_PR_MERGE_HEAD" = "$HOOK_MERGE_HEAD" ] || { echo 'error: PR head changed during merge hook' >&2; exit 1; }
+      require_current_away_authority || exit $?
+    fi
     merge_output=$(tea api --login "$FORGEJO_LOGIN" --repo "$PR_OWNER/$PR_REPO" \
       -X POST "/repos/{owner}/{repo}/pulls/$PR_NUMBER/merge" \
       -f "Do=$forgejo_method" -f "head_commit_id=$FM_PR_MERGE_HEAD" 2>&1) || true

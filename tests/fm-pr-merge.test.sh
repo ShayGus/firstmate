@@ -9,8 +9,8 @@
 # away-authority, outcome-publication, and recovery behavior directly.
 set -u
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 fm_git_identity fmtest fmtest@example.invalid
 
 PR_MERGE="$ROOT/bin/fm-pr-merge.sh"
@@ -3542,6 +3542,54 @@ test_github_updated_head_other_refusals_stop_waiting() {
   pass "fm-pr-merge immediately refuses draft, closed, conflicting, or unreadable updated heads despite pending or missing checks"
 }
 
+test_pr_merge_hooks() {
+  local case_dir out rc
+  case_dir=$(make_case hook-merge)
+  add_gh_mocks "$case_dir" deadbeefcafefeed0000000000000000deadbeef
+  fm_test_lifecycle_hooks "$case_dir/home" task.merge.before task.merge.after
+  rc=0
+  out=$(CONFIG="$case_dir/unrelated" DATA="$case_dir/unrelated" FM_HOOK_TEST_FAIL=task.merge.before run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/9 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail 'PR merge veto ignored'
+  assert_contains "$out" 'fixture refusal' 'PR merge did not reach hook'
+  [ ! -e "$case_dir/meta-at-merge" ] || fail 'veto reached forge merge'
+  : > "$case_dir/home/hook-events.jsonl"
+  out=$(FM_HOOK_TEST_FAIL=task.merge.after run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/9 2>&1) || fail "PR merge failed: $out"
+  jq -es 'map(.event)==["task.merge.before","task.merge.after"] and .[1].before_invocation_id == .[0].invocation_id' "$case_dir/home/hook-events.jsonl" >/dev/null || fail 'PR merge hooks missing or unlinked'
+  pass 'PR merge hooks veto forge operation and notify only confirmed landing'
+}
+
+test_github_state_changed_during_merge_hook() {
+  local case_dir out rc state expect
+  for state in BEHIND UNKNOWN; do
+    case_dir=$(make_case "hook-merge-moved-$state")
+    add_gh_mocks "$case_dir" deadbeefcafefeed0000000000000000deadbeef
+    fm_test_lifecycle_hooks "$case_dir/home" task.merge.before task.merge.after
+    cat > "$case_dir/home/test-hook" <<'SH'
+#!/usr/bin/env bash
+cat >/dev/null
+view=$FM_TEST_GH_VIEW_JSON
+case "$HOOK_MOVE" in
+  BEHIND) jq '.mergeStateStatus = "BEHIND"' "$view" > "$view.tmp" ;;
+  UNKNOWN) jq '.mergeable = "UNKNOWN"' "$view" > "$view.tmp" ;;
+esac
+mv "$view.tmp" "$view"
+SH
+    : > "$case_dir/gh.log"
+    rc=0
+    out=$(HOOK_MOVE=$state FM_PR_GITHUB_MERGEABLE_RETRY_DELAY=0 run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/9 2>&1) || rc=$?
+    [ "$rc" -ne 0 ] || fail "$state: merge proceeded after the base moved during the hook"
+    assert_no_grep '^pr merge ' "$case_dir/gh.log" "$state: forge merge was attempted after the hook"
+    case "$state" in
+      BEHIND) expect='became behind its base during the merge hook' ;;
+      UNKNOWN) expect='is still being computed by GitHub; retry shortly' ;;
+    esac
+    assert_contains "$out" "$expect" "$state: refusal lost its diagnostic"
+  done
+  pass 'PR merge refuses with a diagnostic when the base moves or mergeability is pending after the hook'
+}
+
+test_pr_merge_hooks
+test_github_state_changed_during_merge_hook
 test_github_updated_head_other_refusals_stop_waiting
 test_github_behind_update_refuses_concurrent_head_change
 test_github_zero_exit_queue_required_refuses_with_exact_retry

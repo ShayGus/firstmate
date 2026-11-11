@@ -2,8 +2,8 @@
 # Behavior tests for the verified Rovo CLI crewmate/scout adapter.
 set -u
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 # shellcheck source=bin/fm-classify-lib.sh
 . "$ROOT/bin/fm-classify-lib.sh"
 
@@ -251,6 +251,27 @@ test_rovo_launch_then_send_is_verified() {
   pass "fm-spawn: rovo launches bare, waits for readiness, and delivers its brief pointer"
 }
 
+test_rovo_hooked_snapshot_pointer_is_physical() {
+  local id rec out rc real pointer path
+  id="rovo-hook-z3-$$"
+  rec=$(make_spawn_case hooked "$id")
+  read_spawn_record "$rec"
+  mv "$HOME_DIR/data" "$CASE_DIR/realdata"
+  ln -s "$CASE_DIR/realdata" "$HOME_DIR/data"
+  fm_test_lifecycle_hooks "$HOME_DIR" worker.start.before
+  out=$(run_spawn "$CASE_DIR" "$HOME_DIR" "$PROJ_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$id")
+  rc=$?
+  expect_code 0 "$rc" "hooked rovo spawn under symlinked data should succeed: $out"
+  [ -s "$HOME_DIR/hook-events.jsonl" ] || fail "hook did not run"
+  real=$(cd "$CASE_DIR/realdata/$id" && pwd -P)
+  pointer=$(cat "$CASE_DIR/pointer.log")
+  path=${pointer#Read the brief at }
+  path=${path% and follow it exactly.}
+  case "$path" in "$real"/launch-approved.*) ;; *) fail "hooked rovo pointer left the physical task directory: $pointer" ;; esac
+  [ -f "$path" ] || fail "hooked rovo pointer names a missing snapshot: $path"
+  pass "fm-spawn: hooked rovo delivery points at the physical approved snapshot under symlinked data"
+}
+
 test_rovo_effort_xhigh_is_recorded_but_omitted() {
   local id rec out rc launch meta
   id="rovo-xhigh-z2-$$"
@@ -487,6 +508,7 @@ tool output line $i"
 }
 
 test_rovo_launch_then_send_is_verified
+test_rovo_hooked_snapshot_pointer_is_physical
 test_rovo_effort_xhigh_is_recorded_but_omitted
 test_rovo_effort_high_sets_config_override
 test_rovo_readiness_gate_precedes_pointer

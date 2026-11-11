@@ -12,8 +12,8 @@ set -u
 # Git config they assert on themselves, so drop the inherited one before any git command.
 unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GIT_CONFIG_PARAMETERS
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 # shellcheck source=tests/t3-fake-lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/t3-fake-lib.sh"
 . "$ROOT/bin/fm-watch-key-lib.sh"
@@ -1515,6 +1515,8 @@ test_spawn_leases_slot_creates_thread_and_starts_launch_turn() {
   id=$(t3_uid t3spawnz1)
   t3_task_id "$id"
   t3_case spawn
+  fm_test_lifecycle_hooks "$CASE_DIR/home" worker.start.before worker.start.after
+  cp "$CASE_DIR/home/config/hooks.json" "$CONFIG/hooks.json"
   proj="$CASE_DIR/spawn-project"
   wt="$CASE_DIR/spawn-wt"
   data="$CASE_DIR/data"
@@ -1578,6 +1580,7 @@ test_spawn_leases_slot_creates_thread_and_starts_launch_turn() {
   t3_excluded "$wt" CLAUDE.local.md || fail "CLAUDE.local.md must be git-excluded"
   [ "$(t3_log_line_of 'r.tool === "t3_thread_launch"')" -gt "$(t3_log_line_of 'r.tool === "treehouse"')" ] \
     || fail "the thread launch must follow the lease"
+  jq -es 'map(.event)==["worker.start.before","worker.start.after"]' "$CASE_DIR/home/hook-events.jsonl" >/dev/null || fail 'T3 success did not emit shared start hooks'
   pass "fm-spawn.sh --backend t3code: leases the slot, launches the thread on it, records metadata, sends the launch brief"
 }
 
@@ -2110,6 +2113,8 @@ test_uncertain_launch_message_keeps_task_record() {
   local id out rc thread
   id=$(t3_uid t3uncertainturn)
   t3_case spawn-uncertain-turn
+  fm_test_lifecycle_hooks "$CASE_DIR/home" worker.start.before worker.start.after
+  cp "$CASE_DIR/home/config/hooks.json" "$CONFIG/hooks.json"
   t3_world_set 'w.dropReplyTools = { t3_thread_send: 1 }'
   t3_worker_setup "$id"
   out=$(t3_worker_spawn "$id" claude --model claude-sonnet-5); rc=$?
@@ -2124,6 +2129,7 @@ test_uncertain_launch_message_keeps_task_record() {
   [ "$(t3_dispatch_types)" = "t3_thread_launch t3_thread_send" ] || fail "the thread must be neither archived nor relaunched, got '$(t3_dispatch_types)'"
   [ "$(t3_log_line_of 'r.tool === "treehouse" && r.args.indexOf("return --force") === 0')" -eq 0 ] || fail "a possibly running worker must keep its lease"
   [ -d "$CASE_DIR/state/$id.git-hooks" ] || fail "an uncertain accepted launch must keep the Git hook directory its thread uses"$'\n'"$out"
+  jq -es 'map(.event)==["worker.start.before"]' "$CASE_DIR/home/hook-events.jsonl" >/dev/null || fail 'unconfirmed T3 launch emitted a success hook'
   pass "fm-spawn.sh --backend t3code: a launch brief whose reply is lost is reported unconfirmed and keeps its task record"
 }
 

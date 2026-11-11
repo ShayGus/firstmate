@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Local-only landing must use the durable done head, including across races.
 set -u
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 # shellcheck source=bin/fm-dod-lib.sh
 . "$ROOT/bin/fm-dod-lib.sh"
 
@@ -308,6 +308,22 @@ SH
   pass 'two approved tasks with the same tree cannot roll back a successful landing'
 }
 
+test_local_merge_hooks() {
+  local out rc
+  make_case hook-local
+  record_done || fail 'done not accepted'
+  fm_test_lifecycle_hooks "$HOME_DIR" task.merge.before task.merge.after
+  rc=0
+  out=$(FM_HOOK_TEST_FAIL=task.merge.before land 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail 'local merge veto ignored'
+  [ "$(git -C "$PROJ" rev-parse HEAD)" = "$BASE" ] || fail 'veto moved default'
+  : > "$HOME_DIR/hook-events.jsonl"
+  out=$(FM_HOOK_TEST_FAIL=task.merge.after land 2>&1) || fail "after failure rejected landed merge: $out"
+  jq -es 'map(.event)==["task.merge.before","task.merge.after"] and .[0].pinned_head != null and .[1].before_invocation_id == .[0].invocation_id' "$HOME_DIR/hook-events.jsonl" >/dev/null || fail 'local merge events invalid'
+  pass 'local merge hooks veto before ref transaction and notify after landing'
+}
+
+fm_test_run test_local_merge_hooks
 fm_test_run test_two_tasks_cannot_undo_a_same_tree_landing test_branch_advance_does_not_change_approval \
   test_missing_and_malformed_head_refuse test_change_after_hold_check_refuses \
   test_diverged_default_refuses test_change_during_approval_check_refuses \

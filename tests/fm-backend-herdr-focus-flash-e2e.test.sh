@@ -296,13 +296,23 @@ done
 # A short proof budget keeps the exhausted-proof path fast; the count below is
 # what proves the proof was exhausted rather than skipped.
 C_PROOF_POLLS=3
+# The wrong-focus window on a defective release only spans the close and the
+# restore backstop, which can be shorter than one background sample. So the
+# CLI boundary also takes one independent sample just before forwarding any
+# corrective tab focus, while that window is still open.
+export -f lab focus_snapshot
 C_OUT=$(PATH="$FAKEBIN:$HERDR_ORIGINAL_PATH" FM_FLASH_CALL_LOG="$C_CALL_LOG" \
+  FM_FLASH_FOCUS_SAMPLES="$C_FOCUS_SAMPLES" \
   FM_BACKEND_HERDR_IDLE_SHELL_PROOF_POLLS="$C_PROOF_POLLS" bash -c '
   . "$1/bin/backends/herdr.sh"
   fm_backend_herdr_cli() {
-    local session=$1
+    local session=$1 sample
     shift
     printf "%s\n" "$*" >> "$FM_FLASH_CALL_LOG"
+    if [ "${1:-}" = tab ] && [ "${2:-}" = focus ]; then
+      sample=$(focus_snapshot) || sample=UNREADABLE
+      printf "%s\n" "$sample" >> "$FM_FLASH_FOCUS_SAMPLES"
+    fi
     HERDR_SESSION="$session" herdr "$@" --session "$session"
   }
   fm_backend_herdr_projection_close_pane_focus_preserving "$2" "$3"

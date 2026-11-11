@@ -347,6 +347,9 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Home-local command hooks: docs/lifecycle-hooks.md.
+# shellcheck source=bin/fm-hook-lib.sh
+. "$SCRIPT_DIR/fm-hook-lib.sh"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
@@ -3830,6 +3833,14 @@ if [ "$TEARDOWN_BACKLOG_APPLIES" = 1 ]; then
   }
 fi
 
+fm_hook_begin task.cleanup cleanup task_id "$ID" kind "$KIND" project "${PROJ:-}" \
+  mode "$MODE" backend "$BACKEND" worktree "$WT" || exit 1
+fm_hook_before || exit 1
+# A bounded checker can take time; never return a copy on stale landed proof.
+if [ "${FM_HOOK_ACTIVE:-0}" = 1 ] && teardown_owns_worktree && [ -d "$WT" ] && [ "$FORCE" != "--force" ]; then
+  validate_worktree_teardown_safety || exit 1
+fi
+
 # The initial landed/discard-work checks above have passed (or --force skipped
 # them). Fix 1 and Fix 2 (see script header) run here, unconditionally on
 # --force, and before branch deletion or worktree return - a still-parked run or a
@@ -4280,5 +4291,6 @@ elif teardown_owns_worktree; then
 else
   echo "teardown $ID complete (window ${T:-none}; pool slot $WT left to task $TEARDOWN_SLOT_REASSIGNED_TO${TEARDOWN_SLOT_REASSIGNED_HOME:+ (home $TEARDOWN_SLOT_REASSIGNED_HOME)}, which it was reassigned to)"
 fi
+if [ "$TEARDOWN_POOL_SLOT_LOST" = 0 ]; then fm_hook_after; fi
 backlog_refresh_reminder
 [ "$TEARDOWN_POOL_SLOT_LOST" = 0 ] || exit "$TEARDOWN_LOST_SLOT_EXIT"

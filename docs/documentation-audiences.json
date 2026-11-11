@@ -434,6 +434,10 @@
       "audience": "maintainer-verification"
     },
     {
+      "path": "docs/lifecycle-hooks.md",
+      "audience": "operator-current"
+    },
+    {
       "path": "docs/fleet-ledger.md",
       "audience": "operator-current"
     },
