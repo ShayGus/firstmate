@@ -36,7 +36,8 @@ Unknown fields, versions, duplicate ids, invalid commands, and unknown events ar
 The config must be a readable regular file owned by the invoking user, not a symlink or group/world writable file.
 
 The runner reads and validates one config snapshot per action, in array order.
-It resolves configuration through `FM_CONFIG_OVERRIDE`, otherwise the invoking script's resolved config directory or `FM_HOME/config`.
+It resolves configuration through `FM_CONFIG_OVERRIDE`, otherwise `FM_HOME/config`.
+Directory overrides come only from `FM_*_OVERRIDE`, never from unrelated shell variables.
 Hooks run from `FM_HOME`, inheriting the invoking process's environment with explicit `FM_HOME` and resolved config, state, data, and projects overrides.
 They do not inherit a worker pane's later environment.
 Enable hooks separately in every dispatching home; configuration is not inherited by secondmate homes, and executable paths must work on that home's host.

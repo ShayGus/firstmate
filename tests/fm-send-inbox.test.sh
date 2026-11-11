@@ -517,6 +517,11 @@ test_lifecycle_steer_hooks() {
   : > "$dir/home/hook-events.jsonl"
   FM_HOOK_TEST_FAIL=task.steer.after run_send "$dir" "$err" -- t1 'ordinary text' || fail 'after failure rejected enqueue'
   jq -es 'map(.event)==["task.steer.before","task.steer.after"] and .[1].inbox_record != null and .[1].before_invocation_id == .[0].invocation_id' "$dir/home/hook-events.jsonl" >/dev/null || fail 'steer events or linkage invalid'
+  jq -es '.[0].task_id == "t1" and .[0].kind == "ship" and .[0].harness == "claude" and .[1].task_id == "t1" and .[1].kind == "ship"' "$dir/home/hook-events.jsonl" >/dev/null || fail 'ship steer hooks lost the addressed task context'
+  fm_write_meta "$dir/home/state/t1.meta" "window=sess:fm-t1" "kind=scout" "harness=claude"
+  : > "$dir/home/hook-events.jsonl"
+  run_send "$dir" "$err" -- t1 'scout text' || fail 'scout steer failed'
+  jq -es 'length == 2 and all(.[]; .task_id == "t1" and .kind == "scout")' "$dir/home/hook-events.jsonl" >/dev/null || fail 'scout steer hooks lost the addressed task context'
   : > "$dir/home/hook-events.jsonl"
   run_send "$dir" "$err" -- t1 '/compact' || fail 'slash failed'
   run_send "$dir" "$err" -- t1 --key Enter || fail 'key failed'

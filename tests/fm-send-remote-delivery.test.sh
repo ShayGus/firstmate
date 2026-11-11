@@ -835,7 +835,7 @@ test_remote_steer_hooks() {
   assert_contains "$out" 'fixture refusal' 'remote gate not reached'
   : > "$home/hook-events.jsonl"
   out=$(send_env "$fb" "$home" "$ssh_log" FM_HOOK_TEST_FAIL=task.steer.after "$SEND" rsm '/remote-command' 2>&1) || fail "notify failure rejected remote enqueue: $out"
-  jq -es 'map(.event)==["task.steer.before","task.steer.after"] and .[1].before_invocation_id == .[0].invocation_id' "$home/hook-events.jsonl" >/dev/null || fail 'remote hook events missing'
+  jq -es 'map(.event)==["task.steer.before","task.steer.after"] and .[1].before_invocation_id == .[0].invocation_id and all(.[]; .task_id == "rsm" and .kind == "secondmate" and .backend == "remote")' "$home/hook-events.jsonl" >/dev/null || fail 'remote hook events missing or lost the addressed task context'
   [ -n "$(remote_inbox_records "$rhome")" ] || fail 'remote after fired without durable record'
   pass 'remote steer hooks veto transport and notify after durable enqueue, including slash text'
 }

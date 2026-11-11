@@ -1026,7 +1026,7 @@ else
     fi
   fi
   if [ "$INBOX_PLANE" = 1 ]; then
-    if ! fm_hook_begin task.steer steer task_id "$TARGET_TASK_ID" backend "$TARGET_BACKEND" \
+    if ! fm_hook_begin task.steer steer task_id "$(fm_send_id_from_meta "$TARGET_META")" backend "$TARGET_BACKEND" \
       harness "$TARGET_HARNESS" message "$MESSAGE" target "$T" \
       remote_host "${TARGET_REMOTE_ID:-}" || ! fm_hook_before; then
       fm_send_known_undelivered_cleanup || true
