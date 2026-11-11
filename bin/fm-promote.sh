@@ -395,7 +395,6 @@ fm_hook_begin worker.promote promote task_id "$ID" kind ship previous_kind scout
   harness "$(fm_meta_get "$META" harness)" backend "$(fm_meta_get "$META" backend)" \
   worktree "$(fm_meta_get "$META" worktree)" || exit 1
 fm_hook_before || exit 1
-fm_hook_unchanged || exit 1
 mv "$INSTRUCTIONS_CANDIDATE" "$INSTRUCTIONS" || exit 1
 INSTRUCTIONS_CANDIDATE=
 BRIEF_ORIGINAL="$DATA/$ID/.brief.md.scout.${BASHPID:-$$}"

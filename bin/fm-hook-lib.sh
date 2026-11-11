@@ -35,7 +35,7 @@ fm_hook_begin() {
   FM_HOOK_PREFIX=$1
   local operation=$2 home=${FM_HOME:-} config file attrs uid permissions key value digest meta task_id state data projects
   shift 2
-  config=${FM_CONFIG_OVERRIDE:-${CONFIG:-$home/config}}
+  config=${FM_CONFIG_OVERRIDE:-$home/config}
   file="$config/hooks.json"
   if [ ! -e "$file" ] && [ ! -L "$file" ]; then
     # A failed lookup through an inaccessible ancestor is not proven absence.
@@ -52,9 +52,9 @@ fm_hook_begin() {
   fi
   FM_HOOK_ACTIVE=1
   config=$(fm_hook_absolute "$config") || return 1
-  state=$(fm_hook_absolute "${FM_STATE_OVERRIDE:-${STATE:-$home/state}}") || return 1
-  data=$(fm_hook_absolute "${FM_DATA_OVERRIDE:-${DATA:-$home/data}}") || return 1
-  projects=$(fm_hook_absolute "${FM_PROJECTS_OVERRIDE:-${PROJECTS:-$home/projects}}") || return 1
+  state=$(fm_hook_absolute "${FM_STATE_OVERRIDE:-$home/state}") || return 1
+  data=$(fm_hook_absolute "${FM_DATA_OVERRIDE:-$home/data}") || return 1
+  projects=$(fm_hook_absolute "${FM_PROJECTS_OVERRIDE:-$home/projects}") || return 1
   FM_HOOK_CONFIG_DIR=$config
   FM_HOOK_STATE_DIR=$state
   FM_HOOK_DATA_DIR=$data

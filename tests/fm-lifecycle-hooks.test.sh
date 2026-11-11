@@ -311,7 +311,39 @@ test_cancellation_and_output_bound() {
   pass 'runner: cancellation reaps owned group and diagnostics retain only a bounded tail'
 }
 
+test_ambient_variables() {
+  local rc out
+  make_case ambient
+  cat > "$CASE/env hook" <<'SH'
+#!/usr/bin/env bash
+cat >/dev/null
+printf '%s\n%s\n%s\n%s\n' "$FM_CONFIG_OVERRIDE" "$FM_STATE_OVERRIDE" "$FM_DATA_OVERRIDE" "$FM_PROJECTS_OVERRIDE" > "$FM_HOME/seen-dirs"
+echo 'ambient gate ran' >&2
+exit 7
+SH
+  chmod +x "$CASE/env hook"
+  jq -nc --arg c "$CASE/env hook" '{version:1,hooks:[{id:"gate",event:"task.steer.before",argv:[$c]}]}' > "$HOME_DIR/config/hooks.json"
+  chmod 600 "$HOME_DIR/config/hooks.json"
+  mkdir -p "$CASE/elsewhere"
+  rc=0
+  out=$(env -u FM_CONFIG_OVERRIDE -u FM_STATE_OVERRIDE -u FM_DATA_OVERRIDE -u FM_PROJECTS_OVERRIDE \
+    CONFIG="$CASE/elsewhere" STATE="$CASE/elsewhere" DATA="$CASE/elsewhere" PROJECTS="$CASE/elsewhere" \
+    bash -c '. "$1/bin/fm-hook-lib.sh"; fm_hook_begin task.steer steer task_id t && fm_hook_before' _ "$ROOT" 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail 'unrelated CONFIG variable disabled the blocking gate'
+  assert_contains "$out" 'ambient gate ran' 'gate did not run from FM_HOME/config'
+  printf '%s\n%s\n%s\n%s\n' "$HOME_DIR/config" "$HOME_DIR/state" "$HOME_DIR/data" "$HOME_DIR/projects" > "$CASE/expected-dirs"
+  cmp -s "$HOME_DIR/seen-dirs" "$CASE/expected-dirs" || fail 'unrelated shell variables reached the hook as directory overrides'
+  rm -f "$HOME_DIR/seen-dirs"
+  rc=0
+  FM_CONFIG_OVERRIDE="$HOME_DIR/config" FM_DATA_OVERRIDE="$CASE/elsewhere" \
+    bash -c '. "$1/bin/fm-hook-lib.sh"; fm_hook_begin task.steer steer task_id t && fm_hook_before' _ "$ROOT" >/dev/null 2>&1 || rc=$?
+  [ "$rc" -ne 0 ] || fail 'FM_CONFIG_OVERRIDE was not honored'
+  [ "$(sed -n 3p "$HOME_DIR/seen-dirs")" = "$CASE/elsewhere" ] || fail 'FM_DATA_OVERRIDE was not forwarded'
+  pass 'runner: only FM_* overrides, not ambient CONFIG/STATE/DATA/PROJECTS, locate hook inputs'
+}
+
 test_runner
+test_ambient_variables
 test_cancellation_and_output_bound
 test_snapshot_and_notify_order
 test_spawn

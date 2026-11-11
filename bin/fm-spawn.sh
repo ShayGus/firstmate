@@ -4966,7 +4966,7 @@ if [ "$KIND" = ship ] || [ "$KIND" = scout ]; then
     cp "$BRIEF" "$SPAWN_HOOK_CANDIDATE" || exit 1
     [ "$(fm_hook_digest "$SPAWN_HOOK_CANDIDATE")" = "$(printf '%s' "$FM_HOOK_PAYLOAD" | jq -r .brief_sha256)" ] || exit 1
     BRIEF=$SPAWN_HOOK_CANDIDATE
-    BRIEF_REAL=$BRIEF
+    BRIEF_REAL="$(cd "$(dirname "$BRIEF")" && pwd -P)/$(basename "$BRIEF")"
   fi
 fi
 

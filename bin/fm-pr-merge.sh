@@ -1940,7 +1940,18 @@ case "$PROVIDER" in
     fm_hook_before || exit 1
     if [ "${FM_HOOK_ACTIVE:-0}" = 1 ]; then
       HOOK_MERGE_HEAD=$FM_PR_MERGE_HEAD
-      github_verify_mergeable || exit 1
+      mergeable_status=0
+      github_verify_mergeable || mergeable_status=$?
+      if [ "$mergeable_status" -ne 0 ]; then
+        if [ "$mergeable_status" -eq 3 ]; then
+          printf 'error: mergeability for %s is still being computed by GitHub; retry shortly\n' "$URL" >&2
+        fi
+        exit 1
+      fi
+      if [ "$FM_PR_GITHUB_BEHIND" = true ]; then
+        echo "error: $URL became behind its base during the merge hook; retry the merge" >&2
+        exit 1
+      fi
       [ "$FM_PR_MERGE_HEAD" = "$HOOK_MERGE_HEAD" ] || { echo 'error: PR head changed during merge hook' >&2; exit 1; }
       require_current_away_authority || exit $?
     fi
