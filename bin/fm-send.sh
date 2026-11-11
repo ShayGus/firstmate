@@ -244,6 +244,9 @@ esac
 
 FM_SEND_ORIGINAL_ARGS=("$@")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Home-local command hooks: docs/lifecycle-hooks.md.
+# shellcheck source=bin/fm-hook-lib.sh
+. "$SCRIPT_DIR/fm-hook-lib.sh"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 
 # shellcheck source=bin/fm-gate-refuse-lib.sh
@@ -1022,6 +1025,14 @@ else
       esac
     fi
   fi
+  if [ "$INBOX_PLANE" = 1 ]; then
+    if ! fm_hook_begin task.steer steer task_id "$TARGET_TASK_ID" backend "$TARGET_BACKEND" \
+      harness "$TARGET_HARNESS" message "$MESSAGE" target "$T" \
+      remote_host "${TARGET_REMOTE_ID:-}" || ! fm_hook_before; then
+      fm_send_known_undelivered_cleanup || true
+      exit 1
+    fi
+  fi
   if [ "$INBOX_PLANE" = 1 ] && [ "$TARGET_BACKEND" = remote ]; then
     # Remote inbox leg: the message becomes a durable record in the remote
     # home's steering inbox, written idempotently by the host-local leg, then
@@ -1115,6 +1126,7 @@ else
       echo "error: steer not sent to remote secondmate $TARGET_REMOTE_ID (the remote steering-inbox record could not be written; the remote leg's stderr above has the reason)" >&2
       exit 1
     fi
+    fm_hook_after correlation_id "${PENDING_REPLY_CORR:-}"
     # The remote record is durable delivery, exactly as a local enqueue is.
     if [ -n "$PENDING_REPLY_CORR" ]; then
       if fm_pending_reply_confirm_delivery "$STATE" "$PENDING_REPLY_CORR"; then
@@ -1180,6 +1192,7 @@ else
       exit 1
     fi
     fm_lock_release "$INBOX_META_LOCK"
+    fm_hook_after inbox_record "$INBOX_RECORD" correlation_id "${PENDING_REPLY_CORR:-}"
     # Enqueue IS durable delivery to the task's record: mark the pending
     # expectation delivered now, without resolving it - only a correlated
     # parent report acknowledges the request.

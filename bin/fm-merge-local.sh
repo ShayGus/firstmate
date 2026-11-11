@@ -25,6 +25,9 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Home-local command hooks: docs/lifecycle-hooks.md.
+# shellcheck source=bin/fm-hook-lib.sh
+. "$SCRIPT_DIR/fm-hook-lib.sh"
 FM_ROOT="${FM_ROOT_OVERRIDE:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 FM_HOME="${FM_HOME:-${FM_ROOT_OVERRIDE:-$FM_ROOT}}"
 STATE="${FM_STATE_OVERRIDE:-$FM_HOME/state}"
@@ -156,6 +159,9 @@ if ! git -C "$PROJ" merge-base --is-ancestor "$before" "$MERGE_HEAD"; then
   exit 1
 fi
 
+fm_hook_begin task.merge local task_id "$ID" kind ship project "$PROJ" mode local-only \
+  branch "$BRANCH" pinned_head "$MERGE_HEAD" || exit 1
+fm_hook_before || exit 1
 hold_status=0
 FM_HOME="$FM_HOME" FM_STATE_OVERRIDE="$STATE" \
   "$SCRIPT_DIR/fm-captain-hold.sh" open "$ID" --distinguish-absent || hold_status=$?
@@ -205,4 +211,5 @@ fm_lock_release "$MERGE_PROJECT_LOCK" || true
 MERGE_PROJECT_LOCK=
 # Opt-in fleet activity ledger (docs/fleet-ledger.md); off costs one file test.
 [ ! -e "${FM_CONFIG_OVERRIDE:-$FM_HOME/config}/fleet-ledger" ] || FM_HOME=$FM_HOME FM_STATE_OVERRIDE=$STATE "$SCRIPT_DIR/fm-fleet-ledger.sh" merged "$ID" local || true
+fm_hook_after
 echo "merged $BRANCH into local $DEFAULT ($before -> $after) in $PROJ"

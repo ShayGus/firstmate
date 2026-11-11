@@ -32,8 +32,8 @@
 # shellcheck disable=SC2016
 set -u
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 # shellcheck source=/dev/null
 . "$ROOT/bin/fm-marker-lib.sh"
 
@@ -504,6 +504,27 @@ test_empty_message_refused() {
   pass "fm-send: an empty or whitespace-only text steer refuses before marking, recording, or typing"
 }
 
+test_lifecycle_steer_hooks() {
+  local dir err out rc
+  dir=$(setup_case hook-steer)
+  err="$dir/send.err"
+  fm_test_lifecycle_hooks "$dir/home" task.steer.before task.steer.after
+  rc=0
+  FM_HOOK_TEST_FAIL=task.steer.before run_send "$dir" "$err" -- t1 'ordinary text' || rc=$?
+  [ "$rc" -ne 0 ] || fail 'steer veto ignored'
+  [ ! -e "$dir/home/state/t1.inbox/001.msg" ] || fail 'veto enqueued text'
+  assert_contains "$(cat "$err")" 'fixture refusal' 'missing hook diagnostic'
+  : > "$dir/home/hook-events.jsonl"
+  FM_HOOK_TEST_FAIL=task.steer.after run_send "$dir" "$err" -- t1 'ordinary text' || fail 'after failure rejected enqueue'
+  jq -es 'map(.event)==["task.steer.before","task.steer.after"] and .[1].inbox_record != null and .[1].before_invocation_id == .[0].invocation_id' "$dir/home/hook-events.jsonl" >/dev/null || fail 'steer events or linkage invalid'
+  : > "$dir/home/hook-events.jsonl"
+  run_send "$dir" "$err" -- t1 '/compact' || fail 'slash failed'
+  run_send "$dir" "$err" -- t1 --key Enter || fail 'key failed'
+  [ ! -s "$dir/home/hook-events.jsonl" ] || fail 'typed plane emitted durable steer events'
+  pass 'steer hooks veto enqueue, notify after durability, and exclude typed plane'
+}
+
+test_lifecycle_steer_hooks
 test_text_steer_rides_inbox
 test_deep_home_doorbell_stays_short
 test_multiline_steer_is_legal

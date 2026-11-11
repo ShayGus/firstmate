@@ -6,8 +6,8 @@
 # bin/fm-teardown.sh. docs/fleet-ledger.md owns the record contract.
 set -u
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 
 TMP_ROOT=$(fm_test_tmproot fm-fleet-ledger)
 
@@ -48,6 +48,11 @@ make_case() {  # <name> <on|off>
   PROJ_DIR="$dir/sample"
   TASK="$1-t1"
   WT_DIR="$dir/wt"
+  if [ "$1" = hook-partial ]; then
+    WT_DIR="$dir/pool/9/repo"
+    mkdir -p "$dir/pool/9"
+    printf '{"worktrees":[{"name":"9","path":"%s"}]}\n' "$WT_DIR" > "$dir/pool/treehouse-state.json"
+  fi
   mkdir -p "$HOME_DIR/data/$TASK" "$HOME_DIR/projects" "$HOME_DIR/state" "$HOME_DIR/config" "$HOME_DIR/user-home"
   printf 'claude\n' > "$HOME_DIR/config/crew-harness"
   printf '%s\n' "$$" > "$HOME_DIR/state/.lock"
@@ -96,7 +101,27 @@ run_lifecycle() {
     commit -qm 'landed'
   printf 'local_done_head=%s\n' "$(git -C "$WT_DIR" rev-parse HEAD)" >> "$HOME_DIR/state/$TASK.meta"
   out=$(in_home "$ROOT/bin/fm-merge-local.sh" "$TASK" 2>&1) || fail "local merge failed: $out"
+  if [ "${TEST_HOOK_CLEANUP:-0}" = 1 ]; then
+    local rc=0
+    out=$(FM_HOOK_TEST_FAIL=task.cleanup.before in_home "$ROOT/bin/fm-teardown.sh" "$TASK" 2>&1) || rc=$?
+    [ "$rc" -ne 0 ] || fail 'cleanup veto ignored'
+    [ -f "$HOME_DIR/state/$TASK.meta" ] || fail 'cleanup veto removed metadata'
+    [ -d "$WT_DIR" ] || fail 'cleanup veto removed copy'
+    assert_contains "$out" 'fixture refusal' 'cleanup did not reach hook'
+  fi
+  if [ "${TEST_HOOK_PARTIAL:-0}" = 1 ]; then
+    cat > "$FAKEBIN/treehouse" <<'SH'
+#!/usr/bin/env bash
+if [ "${1:-}" = return ]; then printf 'residue\n' > "$FM_FAKE_PANE_PATH/hook-residue"; fi
+exit 0
+SH
+    chmod +x "$FAKEBIN/treehouse"
+    local partial_rc=0
+    out=$(in_home "$ROOT/bin/fm-teardown.sh" "$TASK" 2>&1) || partial_rc=$?
+    [ "$partial_rc" -eq 4 ] || fail "expected a lost-slot cleanup warning, got $partial_rc: $out"
+  else
   out=$(in_home "$ROOT/bin/fm-teardown.sh" "$TASK" 2>&1) || fail "teardown failed: $out"
+  fi
 }
 
 ledger_rows() {  # <jq filter>: print one compact row per ledger record
@@ -288,6 +313,39 @@ test_flag_off_writes_nothing() {
   pass "flag off: the whole lifecycle leaves no ledger file, offset, or lock"
 }
 
+test_lifecycle_hook_outcomes() {
+  make_case hook-lifecycle off
+  fm_test_lifecycle_hooks "$HOME_DIR" worker.start.before worker.start.after task.merge.before task.merge.after task.cleanup.before task.cleanup.after
+  TEST_HOOK_CLEANUP=1 run_lifecycle
+  jq -es 'map(.event)==["worker.start.before","worker.start.after","task.merge.before","task.merge.after","task.cleanup.before","task.cleanup.before","task.cleanup.after"]' "$HOME_DIR/hook-events.jsonl" >/dev/null || fail 'lifecycle event sequence differs'
+  pass 'lifecycle hooks cover start, local merge and complete cleanup; cleanup veto preserves state'
+}
+
+test_poll_merge_hook() {
+  local url=https://github.com/acme/sample/pull/8
+  make_case hook-poll off
+  fm_test_lifecycle_hooks "$HOME_DIR" task.merge.before task.merge.after
+  (
+    # shellcheck source=bin/fm-merge-outcome-lib.sh
+    . "$ROOT/bin/fm-merge-outcome-lib.sh"
+    FM_HOME="$HOME_DIR" FM_CONFIG_OVERRIDE="$HOME_DIR/config" fm_merge_outcome_report "$HOME_DIR" "$HOME_DIR/state" "$TASK" "$url" poll || exit 1
+    FM_HOME="$HOME_DIR" FM_CONFIG_OVERRIDE="$HOME_DIR/config" fm_merge_outcome_report "$HOME_DIR" "$HOME_DIR/state" "$TASK" "$url" poll || exit 1
+  ) || fail 'poll outcome failed'
+  jq -es 'length==1 and .[0].event=="task.merge.after" and .[0].operation=="poll" and .[0].before_invocation_id==null' "$HOME_DIR/hook-events.jsonl" >/dev/null || fail 'poll hook must notify once without a retrospective veto'
+  pass 'poll-discovered merge emits only an after notification and respects existing deduplication'
+}
+
+test_partial_cleanup_has_no_after_hook() {
+  make_case hook-partial off
+  fm_test_lifecycle_hooks "$HOME_DIR" task.cleanup.before task.cleanup.after
+  TEST_HOOK_PARTIAL=1 run_lifecycle
+  jq -es 'map(.event)==["task.cleanup.before"]' "$HOME_DIR/hook-events.jsonl" >/dev/null || fail 'partial cleanup emitted an after hook'
+  pass 'lost-slot cleanup warns without emitting success notification'
+}
+
+test_lifecycle_hook_outcomes
+test_poll_merge_hook
+test_partial_cleanup_has_no_after_hook
 test_flag_on_records_the_task_lifecycle
 test_flag_on_records_a_pr_merge_once
 test_flag_on_records_a_pr_registration

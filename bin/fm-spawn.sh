@@ -752,6 +752,9 @@ set -eu
 shopt -u patsub_replacement 2>/dev/null || true
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Home-local command hooks: docs/lifecycle-hooks.md.
+# shellcheck source=bin/fm-hook-lib.sh
+. "$SCRIPT_DIR/fm-hook-lib.sh"
 
 usage() {
   # The whole leading comment block, ending at the first line that is not a
@@ -4947,6 +4950,26 @@ else
   fi
 fi
 
+# Shared admission boundary, before any backend allocates an endpoint or copy.
+if [ "$KIND" = ship ] || [ "$KIND" = scout ]; then
+  HOOK_OPERATION=spawn
+  [ "$RELAUNCH" -ne 1 ] || HOOK_OPERATION=relaunch
+  fm_hook_begin worker.start "$HOOK_OPERATION" task_id "$ID" kind "$KIND" \
+    project "$PROJ_ABS" mode "$MODE" yolo "$YOLO" harness "$HARNESS" \
+    backend "$BACKEND" branch "${BRANCH:-}" base_branch "${BASE_BRANCH:-}" \
+    source_brief_path "${SOURCE_BRIEF:-$BRIEF}" brief_path "$BRIEF" \
+    worktree "${RELAUNCH_WT:-}" raw_command "${RAW_COMMAND:-}" || exit 1
+  fm_hook_before || exit 1
+  if [ "${FM_HOOK_ACTIVE:-0}" = 1 ]; then
+    # Deliver a unique snapshot, never a later read of the mutable launch brief.
+    SPAWN_HOOK_CANDIDATE=$(mktemp "$DATA/$ID/launch-approved.XXXXXX") || exit 1
+    cp "$BRIEF" "$SPAWN_HOOK_CANDIDATE" || exit 1
+    [ "$(fm_hook_digest "$SPAWN_HOOK_CANDIDATE")" = "$(printf '%s' "$FM_HOOK_PAYLOAD" | jq -r .brief_sha256)" ] || exit 1
+    BRIEF=$SPAWN_HOOK_CANDIDATE
+    BRIEF_REAL=$BRIEF
+  fi
+fi
+
 if [ "$SPAWN_META_LOCK_HELD" != 1 ]; then
   SPAWN_META_LOCK=$(fm_meta_lock_path "$STATE/$ID.meta") || exit 1
   fm_lock_acquire_wait "$SPAWN_META_LOCK"
@@ -7990,6 +8013,15 @@ if [ "$LAUNCH_ENV_ENABLED" = 1 ]; then
   fi
   LAUNCH="$LAUNCH_ENV_PREFIX /bin/sh -c $(shell_quote "$LAUNCH")"
 fi
+if [ "$KIND" = ship ] || [ "$KIND" = scout ]; then
+  fm_hook_unchanged || exit 1
+  if [ "${FM_HOOK_ACTIVE:-0}" = 1 ]; then
+    [ "$(fm_hook_digest "$BRIEF")" = "$(printf '%s' "$FM_HOOK_PAYLOAD" | jq -r .brief_sha256)" ] || {
+      echo 'error: approved launch snapshot changed before delivery' >&2
+      exit 1
+    }
+  fi
+fi
 if [ "$BACKEND" = t3code ]; then
   # No pane: the launch is the thread's first message, carrying the same
   # encoded brief the LAUNCH template embeds; MODEL/EFFORT were fixed as the
@@ -8302,4 +8334,7 @@ SPAWN_ACCOUNT=
 # Opt-in Herdr project groups (docs/herdr-backend.md "Project groups") tag the
 # new endpoint now rather than at the next watcher poll; off costs one file test.
 [ ! -e "$CONFIG/herdr-project-groups" ] || [ "$BACKEND" != herdr ] || FM_HOME=$FM_HOME FM_STATE_OVERRIDE=$STATE FM_CONFIG_OVERRIDE=$CONFIG "$SCRIPT_DIR/fm-herdr-groups.sh" sync "$ID" || true
+if [ "$KIND" = ship ] || [ "$KIND" = scout ]; then
+  fm_hook_after worktree "$WT" delivered_brief_path "$BRIEF"
+fi
 echo "spawned $ID harness=$HARNESS kind=$KIND$SPAWN_DELIVERY window=$META_WINDOW worktree=$WT$SPAWN_ACCOUNT"

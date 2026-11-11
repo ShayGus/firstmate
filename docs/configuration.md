@@ -3664,3 +3664,7 @@ A live lock, a missing `lsof`, any failed check, or any other fetch failure keep
 Every wait, retry, and removal is printed to stderr, and a successful recovery also prints one `recovered:` summary line to stdout so a session-start refresh - which discards fleet-sync stderr and relays only stdout - still surfaces it.
 
 The shared staleness proof lives in `bin/fm-lock-lib.sh`, which both `fm-teardown.sh` and `fm-fleet-sync.sh` use.
+
+## Lifecycle command hooks
+
+Optional home-local `config/hooks.json` connects external commands to blocking admission and lifecycle notifications; [Lifecycle command hooks](lifecycle-hooks.md) owns the schema, event catalog and execution contract.

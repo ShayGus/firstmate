@@ -9,8 +9,8 @@
 # away-authority, outcome-publication, and recovery behavior directly.
 set -u
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 fm_git_identity fmtest fmtest@example.invalid
 
 PR_MERGE="$ROOT/bin/fm-pr-merge.sh"
@@ -3542,6 +3542,23 @@ test_github_updated_head_other_refusals_stop_waiting() {
   pass "fm-pr-merge immediately refuses draft, closed, conflicting, or unreadable updated heads despite pending or missing checks"
 }
 
+test_pr_merge_hooks() {
+  local case_dir out rc
+  case_dir=$(make_case hook-merge)
+  add_gh_mocks "$case_dir" deadbeefcafefeed0000000000000000deadbeef
+  fm_test_lifecycle_hooks "$case_dir/home" task.merge.before task.merge.after
+  rc=0
+  out=$(FM_HOOK_TEST_FAIL=task.merge.before run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/9 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail 'PR merge veto ignored'
+  assert_contains "$out" 'fixture refusal' 'PR merge did not reach hook'
+  [ ! -e "$case_dir/meta-at-merge" ] || fail 'veto reached forge merge'
+  : > "$case_dir/home/hook-events.jsonl"
+  out=$(FM_HOOK_TEST_FAIL=task.merge.after run_pr_merge "$case_dir" task-x1 https://github.com/example/repo/pull/9 2>&1) || fail "PR merge failed: $out"
+  jq -es 'map(.event)==["task.merge.before","task.merge.after"] and .[1].before_invocation_id == .[0].invocation_id' "$case_dir/home/hook-events.jsonl" >/dev/null || fail 'PR merge hooks missing or unlinked'
+  pass 'PR merge hooks veto forge operation and notify only confirmed landing'
+}
+
+test_pr_merge_hooks
 test_github_updated_head_other_refusals_stop_waiting
 test_github_behind_update_refuses_concurrent_head_change
 test_github_zero_exit_queue_required_refuses_with_exact_retry

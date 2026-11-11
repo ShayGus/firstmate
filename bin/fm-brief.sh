@@ -157,6 +157,9 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Home-local command hooks: docs/lifecycle-hooks.md.
+# shellcheck source=bin/fm-hook-lib.sh
+. "$SCRIPT_DIR/fm-hook-lib.sh"
 
 usage() {
   awk '
@@ -595,6 +598,7 @@ When you have no assigned or in-flight work after that reconciliation, go idle a
 An empty queue is a healthy resting state, not a cue to invent work: never spawn a survey, audit, or any self-directed "find work" task on your own initiative.
 If this charter cannot be carried out, append \`blocked [at=<epoch>]: {why}\` or \`failed [at=<epoch>]: {why}\` to the main status file and stop.
 EOF
+fm_hook_notify brief.generated brief task_id "$ID" kind secondmate source_brief_path "$BRIEF" brief_path "$BRIEF"
 if [ "$SECONDMATE_CHARTER" = "{TASK}" ]; then
   echo "scaffolded: $BRIEF (secondmate charter; replace {TASK})"
 else
@@ -752,6 +756,7 @@ When the report is complete, append \`done [at=<epoch>]: {one-line conclusion}\`
 If your findings reveal work that should ship (e.g. you reproduced a bug and the fix is clear), say so in the report; firstmate may promote this task in place, and you would then receive mode-specific ship instructions as a follow-up message.
 EOF
 append_brief_include
+fm_hook_notify brief.generated brief task_id "$ID" kind scout source_brief_path "$BRIEF" brief_path "$BRIEF"
 echo "scaffolded: $BRIEF (scout; replace {TASK} and {FIRSTMATE_SPEC})"
 exit 0
 fi
@@ -831,6 +836,8 @@ A correction edits only the wrong text: do not run \`$FM_ROOT/bin/fm-ensure-agen
 $DOD
 EOF
 append_brief_include
+fm_hook_notify brief.generated brief task_id "$ID" kind ship mode "$MODE" \
+  branch "$BRANCH" base_branch "$BASE_BRANCH" source_brief_path "$BRIEF" brief_path "$BRIEF"
 if [ "$PR_TEXT" = manual ]; then
   echo "scaffolded: $BRIEF (ship, mode=$MODE pr=manual; replace {TASK} and {FIRSTMATE_SPEC})"
 elif [ "$FORGE" = none ]; then

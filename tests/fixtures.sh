@@ -455,3 +455,26 @@ make_stubs() {
   fm_test_fake_sleep_noop "$fakebin"
   printf '%s\n' "$fakebin"
 }
+
+# fm_test_lifecycle_hooks <home> <event...>
+# Fake local hook commands log stdin and can refuse via FM_HOOK_TEST_FAIL.
+# Uses the home's own paths, so production override handling stays under test.
+fm_test_lifecycle_hooks() {
+  local hook_home=$1 event
+  shift
+  mkdir -p "$hook_home/config"
+  cat > "$hook_home/test-hook" <<'SH'
+#!/usr/bin/env bash
+set -eu
+payload=$(cat)
+printf '%s\n' "$payload" | jq -c . >> "$FM_HOME/hook-events.jsonl"
+event=$(printf '%s' "$payload" | jq -r .event)
+[ "$event" != "${FM_HOOK_TEST_FAIL:-}" ] || { echo 'fixture refusal' >&2; exit 7; }
+SH
+  chmod +x "$hook_home/test-hook"
+  for event in "$@"; do
+    jq -nc --arg event "$event" --arg command "$hook_home/test-hook" \
+      '{id:$event,event:$event,argv:[$command]}'
+  done | jq -s '{version:1,hooks:.}' > "$hook_home/config/hooks.json"
+  chmod 600 "$hook_home/config/hooks.json"
+}

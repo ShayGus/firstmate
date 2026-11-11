@@ -31,8 +31,8 @@
 #      armed.
 set -u
 
-# shellcheck source=tests/lib.sh
-. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# shellcheck source=tests/fixtures.sh
+. "$(dirname "${BASH_SOURCE[0]}")/fixtures.sh"
 # shellcheck source=bin/fm-pending-reply-lib.sh
 . "$ROOT/bin/fm-pending-reply-lib.sh"
 # shellcheck source=bin/fm-marker-lib.sh
@@ -820,6 +820,27 @@ test_local_pending_does_not_close_resolve_key() {
   pass "fm-send local: an unconfirmed submit still never closes a --resolve-key decision"
 }
 
+test_remote_steer_hooks() {
+  local dir fb ssh_log home rhome rc out
+  dir="$TMP_ROOT/remote-hooks"; mkdir -p "$dir"
+  fb=$(make_stubs "$dir"); ssh_log="$dir/ssh.log"; : > "$ssh_log"
+  rhome=$(setup_remote_secondmate_home remote-hooks)
+  home=$(setup_remote_parent_home remote-hooks "$rhome")
+  fm_test_lifecycle_hooks "$home" task.steer.before task.steer.after
+  rc=0
+  out=$(send_env "$fb" "$home" "$ssh_log" FM_HOOK_TEST_FAIL=task.steer.before "$SEND" rsm 'remote text' 2>&1) || rc=$?
+  [ "$rc" -ne 0 ] || fail 'remote veto ignored'
+  [ ! -s "$ssh_log" ] || fail 'veto contacted remote transport'
+  [ -z "$(remote_inbox_records "$rhome")" ] || fail 'remote veto enqueued text'
+  assert_contains "$out" 'fixture refusal' 'remote gate not reached'
+  : > "$home/hook-events.jsonl"
+  out=$(send_env "$fb" "$home" "$ssh_log" FM_HOOK_TEST_FAIL=task.steer.after "$SEND" rsm '/remote-command' 2>&1) || fail "notify failure rejected remote enqueue: $out"
+  jq -es 'map(.event)==["task.steer.before","task.steer.after"] and .[1].before_invocation_id == .[0].invocation_id' "$home/hook-events.jsonl" >/dev/null || fail 'remote hook events missing'
+  [ -n "$(remote_inbox_records "$rhome")" ] || fail 'remote after fired without durable record'
+  pass 'remote steer hooks veto transport and notify after durable enqueue, including slash text'
+}
+
+test_remote_steer_hooks
 test_remote_large_steer_uses_stdin
 test_remote_steer_lands_in_remote_inbox
 test_remote_rerun_is_idempotent

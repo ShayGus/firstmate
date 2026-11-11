@@ -26,6 +26,8 @@
 # source beyond its sourced libraries.
 
 _FM_MERGE_OUTCOME_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=bin/fm-hook-lib.sh
+. "$_FM_MERGE_OUTCOME_LIB_DIR/fm-hook-lib.sh"
 # shellcheck source=bin/fm-pr-lib.sh
 . "$_FM_MERGE_OUTCOME_LIB_DIR/fm-pr-lib.sh"
 # shellcheck source=bin/fm-parent-channel-lib.sh
@@ -111,5 +113,13 @@ fm_merge_outcome_report() {  # <home> <state> <task-id> <pr-url> <origin> [autho
   fm_lock_release "$lock"
   # Opt-in fleet activity ledger (docs/fleet-ledger.md); off costs one file test.
   [ ! -e "${FM_CONFIG_OVERRIDE:-$home/config}/fleet-ledger" ] || [ "$status" -ne 0 ] || FM_HOME=$home FM_STATE_OVERRIDE=$state "$_FM_MERGE_OUTCOME_LIB_DIR/fm-fleet-ledger.sh" merged "$id" pr "$FM_PR_URL" || true
+  if [ "$status" -eq 0 ]; then
+    if [ "$origin" = self ] && [ "${FM_HOOK_PREFIX:-}" = task.merge ]; then
+      fm_hook_after pr_url "$url"
+    else
+      # A poll observes an external/queued merge; it cannot retroactively veto it.
+      (FM_HOME=$home FM_STATE_OVERRIDE=$state fm_hook_notify task.merge poll task_id "$id" pr_url "$url")
+    fi
+  fi
   return "$status"
 }
