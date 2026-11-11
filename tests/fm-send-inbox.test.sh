@@ -505,7 +505,7 @@ test_empty_message_refused() {
 }
 
 test_lifecycle_steer_hooks() {
-  local dir err out rc
+  local dir err rc
   dir=$(setup_case hook-steer)
   err="$dir/send.err"
   fm_test_lifecycle_hooks "$dir/home" task.steer.before task.steer.after
