@@ -1,0 +1,106 @@
+FM_TEST_BEGIN 2026-11-11T10:50:49Z tests/fm-merge-local.test.sh family=pure-contract-unit expected_gate_skip=none
+FM_TEST_BEGIN 2026-11-11T10:50:49Z tests/fm-rovo-harness.test.sh family=pure-contract-unit expected_gate_skip=none
+1..1
+ok - local merge hooks veto before ref transaction and notify after landing
+FM_TEST_COMPLETE
+1..8
+ok - two approved tasks with the same tree cannot roll back a successful landing
+ok - branch advance refuses, and restoring the reported X lands exactly X
+ok - missing, malformed and ambiguous done heads refuse without moving main
+ok - a branch move inside the final Git invocation refuses without changing main or its checkout
+ok - a diverged default branch refuses without changing main or its checkout
+ok - approval and branch changes during the hold read refuse without moving main
+ok - captured metadata cannot pin a replacement task generation
+ok - ledger and teardown record the first done head without reacquiring or releasing caller locks
+FM_TEST_COMPLETE
+FM_TEST_END 2026-11-11T10:50:56Z tests/fm-merge-local.test.sh exit=0 duration_ms=7611 gate_skip=false
+ok - fm-spawn: rovo launches bare, waits for readiness, and delivers its brief pointer
+ok - fm-spawn: hooked rovo delivery points at the physical approved snapshot under symlinked data
+ok - fm-spawn: rovo omits efficiencyLevel for xhigh but keeps its allowedExternalPaths grant, recording xhigh in task metadata
+ok - fm-spawn: rovo's supported effort values merge into the same --config-override as its allowedExternalPaths grant
+ok - fm-spawn: rovo never sends the brief pointer before an observable ready signal, and tears down the created endpoint on failure
+ok - fm-spawn: rovo treats a silent pointer drop as a failed spawn, and tears down the created endpoint
+ok - fm-spawn: missing rovo executable refuses before pane creation
+ok - fm-spawn: rovo cannot be launched as a secondmate
+ok - fm-harness: rovo's markers outrank an inherited CLAUDECODE, and markerless ancestry still resolves rovo
+ok - fm-control-lib: rovo's lifecycle table matches its verified facts
+ok - busy detection: rovo's rendered busy line classifies through its own isolated fallback
+ok - busy detection: a rovo busy marker scrolled out of the tail classifies unknown, never idle
+FM_TEST_END 2026-11-11T10:51:09Z tests/fm-rovo-harness.test.sh exit=0 duration_ms=19918 gate_skip=false
+FM_TEST_BEGIN 2026-11-11T10:51:09Z tests/fm-send-remote-delivery.test.sh family=standalone expected_gate_skip=none
+ok - remote steer hooks veto transport and notify after durable enqueue, including slash text
+ok - fm-send remote: large text steers use stdin instead of the SSH exec argument
+ok - fm-send remote: a text steer lands as a durable remote inbox record and exits 0 at enqueue
+ok - fm-send remote: the printed correlation-reusing resend deduplicates onto the same record
+ok - fm-send remote: a failed retry cannot erase an earlier ambiguous delivery
+ok - fm-send remote: fire-and-forget delivery is idempotent without reply recovery
+ok - remote control: send revalidates endpoint ownership under the metadata lock
+ok - fm-send remote: enqueue revalidates the parent route under its metadata lock
+ok - fm-send remote: expected host is enforced by final route validation
+ok - fm-send remote: a --resolve-key answer closes its decision at enqueue
+ok - fm-send remote: every remote text, harness-native included, rides the inbox
+ok - fm-send remote: a real remote failure still fails loudly with the remote diagnostics
+ok - fm-send remote: exit 3 from the remote leg is a failure, never a delivery claim
+ok - fm-send remote: ssh 255 fails with resend-safe guidance and preserves the expectation
+ok - fm-send remote: the remote leg is budget-bounded and stays idempotent across the bound
+ok - fm-send local: an unconfirmed submit exits 3 with an honest non-error report
+ok - fm-send local: an unconfirmed submit still never closes a --resolve-key decision
+ok - fm-send local: an unconfirmed secondmate send keeps its reply expectation armed
+all fm-send-remote-delivery tests passed
+FM_TEST_END 2026-11-11T10:51:36Z tests/fm-send-remote-delivery.test.sh exit=0 duration_ms=27511 gate_skip=false
+FM_TEST_BEGIN 2026-11-11T10:51:36Z tests/fm-lifecycle-hooks.test.sh family=unclassified expected_gate_skip=none
+ok - runner: absent/pass/refusal/timeout/missing command/config trust and literal argv
+ok - runner: only FM_* overrides, not ambient CONFIG/STATE/DATA/PROJECTS, locate hook inputs
+ok - runner: cancellation reaps owned group and diagnostics retain only a bounded tail
+ok - runner: one config snapshot, duplicate/timeout validation and notify ordering
+ok - spawn: ship/scout/raw/relaunch veto at shared gate; success delivers evaluated snapshot
+ok - start: changed candidate between admission and delivery refuses without launching
+ok - promotion: veto preserves contract; success publishes evaluated candidates
+ok - brief: ship/scout/charter notifications run after generation and cannot veto
+FM_TEST_END 2026-11-11T10:51:51Z tests/fm-lifecycle-hooks.test.sh exit=0 duration_ms=14633 gate_skip=false
+FM_TEST_BEGIN 2026-11-11T10:51:51Z tests/fm-send-inbox.test.sh family=backend-dispatch expected_gate_skip=none
+ok - steer hooks veto enqueue, notify after durability, and exclude typed plane
+ok - fm-send inbox: the payload is recorded durably and only the doorbell is typed
+ok - fm-send inbox: a deep home rings the same short doorbell naming the inbox once
+ok - fm-send inbox: newlines are legal and the terminal can no longer truncate a steer
+ok - fm-send inbox: a re-send is a new durable record, never a retyped payload
+ok - fm-send inbox: a visibly pending composer skips the ring, and the steer stays durably sent
+ok - fm-send inbox: a failed doorbell is still a durably sent steer
+ok - fm-send inbox: a fire-and-forget ring that did not land owes one retry ring
+ok - fm-send inbox: without config/wait-no-turns a fire-and-forget ring is not retried
+ok - fm-send planes: slash and codex $skill invocations stay typed; plain $-text rides the inbox
+ok - fm-send planes: an explicit backend target keeps the typed plane
+ok - fm-send planes: the --key lifecycle path never touches the inbox
+ok - fm-send inbox: a secondmate steer records marker+corr in the body and is delivered at enqueue
+ok - fm-send inbox: lost reply bookkeeping never invites a resend, and the delivered steer is never duplicated
+ok - fm-send inbox: metadata lock contention fails bounded without enqueue
+ok - fm-send inbox: an unwritable record is a loud local failure that leaves no false expectation
+ok - fm-send: an empty or whitespace-only text steer refuses before marking, recording, or typing
+FM_TEST_END 2026-11-11T10:52:37Z tests/fm-send-inbox.test.sh exit=0 duration_ms=45633 gate_skip=false
+FM_TEST_BEGIN 2026-11-11T10:52:37Z tests/fm-fleet-ledger.test.sh family=unclassified expected_gate_skip=none
+ok - lifecycle hooks cover start, local merge and complete cleanup; cleanup veto preserves state
+ok - poll-discovered merge emits only an after notification and respects existing deduplication
+ok - lost-slot cleanup warns without emitting success notification
+ok - flag on: dispatch, polled status lines, the local merge after its task's pending lines, and cleanup are recorded in order
+ok - flag on: a PR merge is recorded once, after the task's pending status lines
+ok - flag on: registering a PR records task.pr_ready with its full URL after the task's pending status lines, and the merge-time re-record adds nothing
+ok - flag on: a worker's status command records its line at once, and the watcher backstop does not record it again
+ok - flag on, state override outside the home: the worker's status command records its line at once
+ok - flag on, relative config override: a worker running elsewhere still records its line at once
+ok - append failing: the worker's status command exits nonzero and records nothing
+ok - ledger failing: the worker's status line still lands exactly, quietly, and the backstop records it later
+ok - flag off: the worker's status command is a plain append and leaves no ledger file, offset, or lock
+ok - flag off: the whole lifecycle leaves no ledger file, offset, or lock
+FM_TEST_END 2026-11-11T10:53:16Z tests/fm-fleet-ledger.test.sh exit=0 duration_ms=39664 gate_skip=false
+FM_TEST_SUMMARY total=6 failed=0 skipped_gate=0 duration_ms=147682
+FM_TEST_SUMMARY_FAMILY family=backend-dispatch count=1 duration_ms=45633 failed=0
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=2 duration_ms=27529 failed=0
+FM_TEST_SUMMARY_FAMILY family=standalone count=1 duration_ms=27511 failed=0
+FM_TEST_SUMMARY_FAMILY family=unclassified count=2 duration_ms=54297 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-send-inbox.test.sh duration_ms=45633
+FM_TEST_SLOWEST rank=2 script=tests/fm-fleet-ledger.test.sh duration_ms=39664
+FM_TEST_SLOWEST rank=3 script=tests/fm-send-remote-delivery.test.sh duration_ms=27511
+FM_TEST_SLOWEST rank=4 script=tests/fm-rovo-harness.test.sh duration_ms=19918
+FM_TEST_SLOWEST rank=5 script=tests/fm-lifecycle-hooks.test.sh duration_ms=14633
+FM_TEST_SLOWEST rank=6 script=tests/fm-merge-local.test.sh duration_ms=7611
+EXIT=0
